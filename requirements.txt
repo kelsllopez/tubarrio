@@ -12,6 +12,7 @@ daphne==4.2.1
 Django==6.0.3
 django-jazzmin==3.0.4
 djangorestframework==3.17.1
+gunicorn==25.3.0
 hyperlink==21.0.0
 idna==3.11
 Incremental==24.11.0
