@@ -25,7 +25,11 @@ SECRET_KEY = 'django-insecure-$h&8^za88o552ww10zggmqie1(ftzxvl2@ojpfxn065(skhd-f
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+<<<<<<< HEAD
 ALLOWED_HOSTS = ['tubarrio.onrender.com','*']
+=======
+ALLOWED_HOSTS = ['tubarrio.onrender.com']
+>>>>>>> 43222f30c66c659c1854574395bf3871ffbd636d
 
 # Application definition
 
