@@ -1,0 +1,1123 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>TuBarrio 🇨🇱 — Registrar mi negocio</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    :root {
+      --cream:#F6F1E9; --warm:#EDE4D6; --bark:#241A10;
+      --terra:#C2522A; --gold:#D4A540; --sage:#5F8C68;
+      --dust:#8A7768; --card:#FDFAF4; --err:#D0302A;
+      --shadow-sm:0 2px 12px rgba(36,26,16,.08);
+      --shadow-md:0 8px 32px rgba(36,26,16,.12);
+      --shadow-lg:0 20px 60px rgba(36,26,16,.18);
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--bark);min-height:100vh}
+
+    /* ── NAV ── */
+    nav{
+      position:sticky;top:0;z-index:100;
+      display:flex;align-items:center;justify-content:space-between;
+      padding:.85rem 2rem;
+      background:rgba(246,241,233,.95);backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(36,26,16,.07);
+    }
+    .logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.35rem;color:var(--bark);letter-spacing:-.03em;display:flex;align-items:center;gap:.3rem;text-decoration:none}
+    .logo span{color:var(--terra)}
+    .nav-back{display:flex;align-items:center;gap:.4rem;font-size:.83rem;font-weight:500;color:var(--dust);text-decoration:none;transition:color .2s;padding:.4rem .7rem;border-radius:10px;transition:all .2s}
+    .nav-back:hover{color:var(--bark);background:var(--warm)}
+
+    /* ── LAYOUT ── */
+    .page-wrap{display:grid;grid-template-columns:1fr 1.1fr;min-height:calc(100vh - 58px)}
+
+    /* ── LEFT PANEL ── */
+    .left-panel{
+      background:var(--bark);padding:4rem 3rem;
+      display:flex;flex-direction:column;justify-content:center;
+      position:sticky;top:58px;height:calc(100vh - 58px);overflow:hidden;
+    }
+    .left-panel::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(194,82,42,.1);top:-160px;right:-140px}
+    .left-panel::after{content:'';position:absolute;width:380px;height:380px;border-radius:50%;background:rgba(212,165,64,.08);bottom:-100px;left:-90px}
+    .left-content{position:relative;z-index:1}
+    .left-chip{
+      display:inline-flex;align-items:center;gap:.4rem;
+      background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
+      padding:.3rem .9rem;border-radius:100px;
+      font-size:.72rem;font-weight:600;color:var(--gold);
+      letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.5rem;
+    }
+    .left-panel h1{
+      font-family:'Fraunces',serif;font-size:clamp(1.9rem,2.8vw,2.9rem);
+      font-weight:900;line-height:1.06;letter-spacing:-.04em;color:var(--cream);margin-bottom:1.1rem;
+    }
+    .left-panel h1 em{font-style:italic;color:var(--gold)}
+    .left-panel p{color:rgba(246,241,233,.55);font-size:.95rem;line-height:1.75;max-width:360px;margin-bottom:2.5rem}
+    .benefits{display:flex;flex-direction:column;gap:.85rem}
+    .benefit{display:flex;align-items:flex-start;gap:.8rem;opacity:0;animation:fadeIn .5s ease both}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+    .b-ico{
+      width:38px;height:38px;flex-shrink:0;
+      background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
+      border-radius:11px;display:grid;place-items:center;font-size:1.05rem;
+    }
+    .b-text strong{display:block;font-size:.88rem;color:var(--cream);margin-bottom:.1rem}
+    .b-text span{font-size:.8rem;color:rgba(246,241,233,.45);line-height:1.5}
+
+    /* Paso indicador */
+    .step-indicator{display:flex;align-items:center;gap:.4rem;margin-top:2.2rem;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,.08)}
+    .si-item{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+    .si-dot{
+      width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
+      font-size:.7rem;font-weight:700;
+      background:rgba(255,255,255,.07);color:rgba(246,241,233,.35);
+      border:1.5px solid rgba(255,255,255,.1);transition:all .35s cubic-bezier(.34,1.56,.64,1);
+    }
+    .si-dot.done{background:var(--sage);color:#fff;border-color:var(--sage)}
+    .si-dot.active{background:var(--gold);color:var(--bark);border-color:var(--gold);transform:scale(1.18)}
+    .si-line{flex:1;height:1.5px;background:rgba(255,255,255,.1);transition:background .4s}
+    .si-line.done{background:var(--sage)}
+    .si-label{font-size:.66rem;color:rgba(246,241,233,.4);letter-spacing:.03em}
+
+    /* ── RIGHT PANEL ── */
+    .right-panel{padding:3rem 3rem 2.5rem;overflow-y:auto;background:var(--cream)}
+    .step-form{display:none;animation:stepIn .35s ease both}
+    .step-form.active{display:block}
+    @keyframes stepIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+
+    /* Progress bar */
+    .progress-wrap{height:3px;background:rgba(36,26,16,.07);border-radius:100px;margin-bottom:2.2rem;overflow:hidden}
+    .progress-bar{height:100%;background:var(--terra);border-radius:100px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+
+    .form-title{font-family:'Fraunces',serif;font-size:1.65rem;font-weight:900;letter-spacing:-.03em;margin-bottom:.3rem}
+    .form-sub{font-size:.87rem;color:var(--dust);margin-bottom:2rem;line-height:1.65}
+
+    /* ── CAMPOS ── */
+    .field{margin-bottom:1.2rem}
+    .field label{
+      display:flex;align-items:center;gap:.3rem;
+      font-size:.79rem;font-weight:600;margin-bottom:.4rem;color:var(--bark);
+    }
+    .req{color:var(--terra);font-size:.88rem}
+    .field input,.field select,.field textarea{
+      width:100%;padding:.72rem 1rem;border-radius:12px;
+      border:1.5px solid rgba(36,26,16,.12);background:var(--card);
+      font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--bark);
+      outline:none;transition:border-color .2s,box-shadow .2s;
+    }
+    .field input:focus,.field select:focus,.field textarea:focus{
+      border-color:var(--terra);box-shadow:0 0 0 3px rgba(194,82,42,.1);
+    }
+    .field input.err,.field select.err{border-color:var(--err);box-shadow:0 0 0 3px rgba(208,48,42,.08)}
+    .field .err-msg{font-size:.74rem;color:var(--err);margin-top:.3rem;display:none;align-items:center;gap:.25rem}
+    .field.has-err .err-msg{display:flex}
+    .field textarea{resize:vertical;min-height:85px;line-height:1.6}
+    .field .hint{font-size:.73rem;color:var(--dust);margin-top:.28rem}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+
+    /* ── CATEGORÍAS ── */
+    .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1.2rem}
+    .cat-opt{
+      border:1.5px solid rgba(36,26,16,.1);border-radius:14px;
+      padding:.9rem .7rem;text-align:center;cursor:pointer;
+      transition:all .2s;background:var(--card);position:relative;overflow:hidden;
+    }
+    .cat-opt::after{
+      content:'';position:absolute;inset:0;border-radius:13px;
+      background:var(--terra);opacity:0;transition:opacity .2s;
+    }
+    .cat-opt:hover{border-color:rgba(194,82,42,.35);transform:translateY(-1px);box-shadow:0 4px 16px rgba(194,82,42,.1)}
+    .cat-opt.selected{border-color:var(--terra);background:#FFF2EE;box-shadow:0 0 0 3px rgba(194,82,42,.12)}
+    .cat-opt.selected::after{opacity:0}
+    .co-ico{font-size:1.55rem;margin-bottom:.35rem;position:relative;z-index:1}
+    .co-name{font-size:.76rem;font-weight:700;color:var(--bark);position:relative;z-index:1}
+    .co-desc{font-size:.65rem;color:var(--dust);margin-top:.08rem;position:relative;z-index:1}
+
+    /* ── DÍAS ── */
+    .days-grid{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem}
+    .day-btn{
+      width:42px;height:42px;border-radius:11px;border:1.5px solid rgba(36,26,16,.12);
+      background:var(--card);cursor:pointer;font-size:.78rem;font-weight:600;
+      color:var(--dust);transition:all .18s;
+    }
+    .day-btn:hover{border-color:var(--terra);color:var(--terra)}
+    .day-btn.on{background:var(--bark);color:var(--cream);border-color:var(--bark);transform:scale(1.05)}
+
+    /* ── REDES SOCIALES ── */
+    .red-field{
+      display:flex;align-items:center;gap:.6rem;
+      background:var(--card);border:1.5px solid rgba(36,26,16,.1);
+      border-radius:12px;padding:.62rem .9rem;margin-bottom:.4rem;
+      transition:border-color .2s,box-shadow .2s;
+    }
+    .red-field:focus-within{border-color:var(--terra);box-shadow:0 0 0 3px rgba(194,82,42,.1)}
+    .red-icon{font-size:1.05rem;flex-shrink:0}
+    .red-field input{border:none;background:transparent;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--bark);width:100%}
+    .red-field input::placeholder{color:var(--dust)}
+    .public-hint{
+      font-size:.72rem;color:var(--dust);margin-top:.25rem;
+      display:flex;align-items:center;gap:.3rem;
+    }
+    .public-hint::before{content:'👁';font-size:.75rem}
+
+    /* ── HORARIO ── */
+    .horario-wrap{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:.6rem;margin-bottom:.4rem}
+    .horario-sep{color:var(--dust);font-size:.82rem;text-align:center;font-weight:500}
+
+    /* ── CHECKBOX PRIVACIDAD ── */
+    .privacy-check{
+      display:flex;align-items:flex-start;gap:.6rem;cursor:pointer;
+      margin-top:.6rem;background:var(--warm);
+      border:1px solid rgba(36,26,16,.09);border-radius:11px;padding:.62rem .9rem;
+      transition:background .15s;
+    }
+    .privacy-check:hover{background:#E4D9C8}
+    .privacy-check input[type="checkbox"]{width:auto;margin-top:3px;accent-color:var(--terra);flex-shrink:0;cursor:pointer}
+    .privacy-check span{font-size:.81rem;color:var(--bark);line-height:1.5}
+
+    /* ── AVISO VISIBILIDAD ── */
+    .visibility-notice{
+      background:#FFF8EE;border:1.5px solid rgba(212,165,64,.3);
+      border-radius:12px;padding:.75rem 1rem;margin-bottom:1.2rem;
+      font-size:.81rem;color:var(--dust);
+      display:flex;gap:.6rem;align-items:flex-start;line-height:1.55;
+    }
+
+    /* ── GPS BOTÓN ── */
+    .btn-gps-loc{
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+      width:100%;padding:.78rem;
+      background:var(--bark);color:var(--cream);
+      border:none;border-radius:12px;cursor:pointer;
+      font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;
+      transition:background .2s,transform .15s,box-shadow .15s;margin-bottom:.75rem;
+      box-shadow:0 3px 12px rgba(36,26,16,.2);
+    }
+    .btn-gps-loc:hover{background:var(--terra);transform:translateY(-1px);box-shadow:0 6px 20px rgba(194,82,42,.3)}
+    .btn-gps-loc:active{transform:translateY(0)}
+    .btn-gps-loc:disabled{opacity:.6;cursor:not-allowed;transform:none}
+
+    .dir-divider{
+      display:flex;align-items:center;gap:.7rem;
+      margin-bottom:.75rem;color:var(--dust);font-size:.78rem;font-weight:500;
+    }
+    .dir-divider::before,.dir-divider::after{content:'';flex:1;height:1px;background:rgba(36,26,16,.1)}
+
+    /* ── GEOCODER ── */
+    .geo-wrap{
+      border:1.5px solid rgba(36,26,16,.1);border-radius:14px;
+      overflow:hidden;margin-top:.5rem;background:var(--card);
+      transition:border-color .2s;
+    }
+    .geo-wrap.loading{border-color:var(--gold)}
+    .geo-wrap.ok{border-color:var(--sage)}
+    .geo-wrap.fail{border-color:var(--err)}
+    .geo-status{
+      display:flex;align-items:center;gap:.55rem;
+      padding:.6rem .9rem;font-size:.78rem;color:var(--dust);
+      background:var(--warm);border-bottom:1px solid rgba(36,26,16,.06);min-height:40px;
+    }
+    .gs-ico{font-size:.95rem;flex-shrink:0}
+    .gs-text{flex:1}
+    .gs-coords{font-size:.7rem;font-family:monospace;color:var(--sage);font-weight:600}
+    .btn-retry{
+      background:var(--terra);color:#fff;border:none;border-radius:8px;
+      padding:.22rem .6rem;font-size:.7rem;font-weight:600;cursor:pointer;flex-shrink:0;
+    }
+    #miniMap{height:190px;width:100%;display:none}
+    #miniMap.visible{display:block}
+    .map-hint{
+      position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
+      background:rgba(36,26,16,.8);color:#fff;font-size:.68rem;
+      padding:.22rem .7rem;border-radius:100px;pointer-events:none;
+      white-space:nowrap;z-index:1000;
+    }
+
+    /* ── PREVIEW CARD (paso 4) ── */
+    .preview-card{
+      background:var(--card);border:1px solid rgba(36,26,16,.08);
+      border-radius:18px;overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:1.8rem;
+    }
+    .pc-head{height:90px;display:flex;align-items:center;justify-content:center;font-size:3rem}
+    .pc-body{padding:1.1rem 1.2rem 1.2rem}
+    .pc-name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem}
+    .pc-cat{font-size:.71rem;color:var(--terra);font-weight:600;margin-bottom:.7rem;text-transform:uppercase;letter-spacing:.05em}
+    .pc-info{display:flex;flex-direction:column;gap:.3rem}
+    .pc-row{display:flex;align-items:center;gap:.4rem;font-size:.79rem;color:var(--dust)}
+    .pc-row svg{opacity:.45;flex-shrink:0}
+    .pub-tag{
+      display:inline-flex;align-items:center;gap:.25rem;
+      font-size:.65rem;font-weight:700;
+      background:rgba(95,140,104,.12);color:var(--sage);
+      border-radius:100px;padding:.1rem .45rem;margin-left:.35rem;
+      letter-spacing:.03em;text-transform:uppercase;
+    }
+
+    /* ── PREVIEW FLOTANTE ── */
+    .preview-float{
+      position:fixed;bottom:1.5rem;right:1.5rem;
+      width:270px;background:var(--card);
+      border:1px solid rgba(36,26,16,.1);border-radius:18px;
+      box-shadow:var(--shadow-lg);overflow:hidden;z-index:300;
+      transform:translateY(0) scale(1);
+      transition:transform .35s cubic-bezier(.34,1.2,.64,1),opacity .3s;
+      opacity:1;
+    }
+    .preview-float.hidden{transform:translateY(120%) scale(.95);opacity:0;pointer-events:none}
+    .pf-head{
+      height:68px;display:flex;align-items:center;justify-content:center;
+      font-size:2rem;position:relative;
+    }
+    .pf-live-badge{
+      position:absolute;top:8px;right:9px;
+      background:var(--terra);color:#fff;
+      font-size:.6rem;font-weight:700;letter-spacing:.07em;
+      padding:.16rem .5rem;border-radius:100px;
+      display:flex;align-items:center;gap:.28rem;
+    }
+    .pf-live-dot{width:5px;height:5px;border-radius:50%;background:#fff;animation:livePulse 1.4s infinite}
+    @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.25}}
+    .pf-body{padding:.8rem .95rem .95rem}
+    .pf-name{font-family:'Fraunces',serif;font-weight:700;font-size:.92rem;margin-bottom:.12rem}
+    .pf-cat{font-size:.68rem;color:var(--terra);font-weight:600;margin-bottom:.55rem}
+    .pf-info{display:flex;flex-direction:column;gap:.2rem}
+    .pf-row{display:flex;align-items:center;gap:.32rem;font-size:.72rem;color:var(--dust)}
+    .pf-row svg{opacity:.45;flex-shrink:0}
+    .pf-toggle{
+      position:absolute;top:8px;left:9px;
+      background:rgba(36,26,16,.5);color:#fff;
+      border:none;border-radius:8px;font-size:.62rem;font-weight:600;
+      padding:.16rem .5rem;cursor:pointer;backdrop-filter:blur(4px);transition:background .15s;
+    }
+    .pf-toggle:hover{background:rgba(36,26,16,.75)}
+
+    /* ── BOTONES ── */
+    .btn-next{
+      width:100%;padding:.9rem;
+      background:var(--terra);color:#fff;
+      border:none;border-radius:14px;
+      font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;
+      cursor:pointer;box-shadow:0 4px 20px rgba(194,82,42,.3);
+      transition:transform .15s,box-shadow .15s,background .2s;
+      display:flex;align-items:center;justify-content:center;gap:.5rem;
+      margin-top:.5rem;position:relative;z-index:1;
+    }
+    .btn-next:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(194,82,42,.4)}
+    .btn-next:active{transform:translateY(0)}
+    .btn-next:disabled{opacity:.6;cursor:not-allowed;transform:none}
+    .btn-next.green{background:var(--sage);box-shadow:0 4px 20px rgba(95,140,104,.3)}
+    .btn-next.green:hover{box-shadow:0 8px 28px rgba(95,140,104,.4)}
+
+    .btn-back{
+      width:100%;padding:.8rem;
+      background:transparent;color:var(--dust);
+      border:1.5px solid rgba(36,26,16,.12);border-radius:14px;
+      font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;
+      cursor:pointer;transition:all .2s;margin-top:.5rem;
+    }
+    .btn-back:hover{border-color:var(--bark);color:var(--bark);background:var(--warm)}
+
+    .spinner{
+      width:17px;height:17px;border-radius:50%;
+      border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;
+      animation:spinAnim .7s linear infinite;display:inline-block;
+    }
+    @keyframes spinAnim{to{transform:rotate(360deg)}}
+
+    .error-banner{
+      background:#FFF0EF;border:1.5px solid var(--err);
+      border-radius:12px;padding:.78rem 1rem;font-size:.83rem;
+      color:var(--err);margin-bottom:1.1rem;display:none;align-items:center;gap:.55rem;
+    }
+    .error-banner.show{display:flex}
+
+    /* ── SUCCESS ── */
+    .success-screen{display:none;text-align:center;padding:2rem 0;animation:stepIn .5s ease both}
+    .success-screen.active{display:block}
+    .success-ico{
+      width:86px;height:86px;border-radius:50%;
+      background:linear-gradient(135deg,#D5E8D4,#A2D09E);
+      display:grid;place-items:center;font-size:2.6rem;
+      margin:0 auto 1.4rem;animation:popIn .55s .1s cubic-bezier(.34,1.56,.64,1) both;
+    }
+    @keyframes popIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
+    .success-screen h2{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;margin-bottom:.6rem}
+    .success-screen p{color:var(--dust);font-size:.93rem;line-height:1.72;max-width:360px;margin:0 auto 2rem}
+    .steps-list{
+      display:flex;flex-direction:column;gap:.65rem;
+      background:var(--card);border-radius:16px;padding:1.2rem;
+      margin-bottom:2rem;border:1px solid rgba(36,26,16,.07);text-align:left;
+    }
+    .step-item{display:flex;align-items:center;gap:.8rem;font-size:.86rem;animation:fadeIn .4s ease both}
+    .step-item .si{
+      width:30px;height:30px;border-radius:9px;background:var(--warm);
+      display:grid;place-items:center;font-size:.95rem;flex-shrink:0;
+    }
+
+    /* ── TOAST ── */
+    .toast-reg{
+      position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);
+      background:var(--bark);color:var(--cream);
+      padding:.62rem 1.3rem;border-radius:100px;font-size:.82rem;font-weight:500;
+      z-index:9999;opacity:0;transition:all .3s cubic-bezier(.34,1.2,.64,1);
+      white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-md);
+    }
+    .toast-reg.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:860px){
+      .page-wrap{grid-template-columns:1fr}
+      .left-panel{position:static;height:auto;padding:2.5rem 2rem}
+      .right-panel{padding:2.2rem 1.6rem 5rem}
+      .field-row{grid-template-columns:1fr}
+      .cat-grid{grid-template-columns:repeat(2,1fr)}
+      .preview-float{width:230px}
+    }
+    @media(max-width:540px){
+      nav{padding:.75rem 1.1rem}
+      .right-panel{padding:2rem 1.1rem 6rem}
+      .preview-float{
+        width:auto;right:.75rem;bottom:.75rem;
+        border-radius:100px;
+      }
+      .pf-body,.pf-toggle,.pf-live-badge{display:none}
+      .pf-head{height:44px;width:44px;border-radius:100px;font-size:1.4rem;padding:0}
+      .cat-grid{grid-template-columns:repeat(3,1fr)}
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="logo" href="{% url 'index' %}">Tu<span>Barrio</span> 🇨🇱</a>
+  <a class="nav-back" href="{% url 'index' %}">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+    Volver al mapa
+  </a>
+</nav>
+
+<!-- PREVIEW FLOTANTE -->
+<div class="preview-float hidden" id="previewFloat">
+  <div class="pf-head" id="pfHead" style="background:linear-gradient(135deg,#FDEBD0,#F5C99E)">
+    🏪
+    <div class="pf-live-badge"><div class="pf-live-dot"></div>LIVE</div>
+    <button class="pf-toggle" onclick="toggleFloat()" id="pfToggleBtn">ocultar</button>
+  </div>
+  <div class="pf-body">
+    <div class="pf-name" id="pfName">Tu negocio</div>
+    <div class="pf-cat"  id="pfCat">Categoría · Ciudad</div>
+    <div class="pf-info">
+      <div class="pf-row">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="pfDir">Dirección</span>
+      </div>
+      <div class="pf-row" id="pfGeoRow" style="display:none">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+        <span style="color:var(--sage);font-weight:600;font-size:.7rem">📍 Ubicación GPS</span>
+      </div>
+      <div class="pf-row">
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        <span id="pfHora">08:00 – 18:00</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="page-wrap">
+
+  <!-- LEFT -->
+  <div class="left-panel">
+    <div class="left-content">
+      <div class="left-chip">🏪 Para dueños de negocios</div>
+      <h1>Aparecé en tu barrio <em>gratis</em> y al tiro</h1>
+      <p>Miles de vecinos buscan negocios cerca. TuBarrio los conecta contigo — sin pagar publicidad, sin complicaciones.</p>
+      <div class="benefits">
+        <div class="benefit" style="animation-delay:.1s">
+          <div class="b-ico">👀</div>
+          <div class="b-text"><strong>Más visibilidad local</strong><span>Aparecés en el mapa y en la lista de búsqueda del barrio</span></div>
+        </div>
+        <div class="benefit" style="animation-delay:.2s">
+          <div class="b-ico">💬</div>
+          <div class="b-text"><strong>Contacto directo</strong><span>Los clientes te escriben directo por WhatsApp o tus redes</span></div>
+        </div>
+        <div class="benefit" style="animation-delay:.3s">
+          <div class="b-ico">$0</div>
+          <div class="b-text"><strong>Completamente gratis</strong><span>Sin costos, sin suscripción. Lo publicamos dentro de 24 hrs.</span></div>
+        </div>
+        <div class="benefit" style="animation-delay:.4s">
+          <div class="b-ico">🔒</div>
+          <div class="b-text"><strong>Vos decidís qué mostrar</strong><span>Tu WhatsApp solo aparece si vos lo autorizás</span></div>
+        </div>
+      </div>
+      <div class="step-indicator">
+        <div class="si-item"><div class="si-dot active" id="si1">1</div><div class="si-label">Info</div></div>
+        <div class="si-line" id="sl1"></div>
+        <div class="si-item"><div class="si-dot" id="si2">2</div><div class="si-label">Horario</div></div>
+        <div class="si-line" id="sl2"></div>
+        <div class="si-item"><div class="si-dot" id="si3">3</div><div class="si-label">Contacto</div></div>
+        <div class="si-line" id="sl3"></div>
+        <div class="si-item"><div class="si-dot" id="si4">4</div><div class="si-label">Confirmar</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right-panel" id="rightPanel">
+    <div class="progress-wrap"><div class="progress-bar" id="progressBar" style="width:25%"></div></div>
+
+    <!-- ════ PASO 1 ════ -->
+    <div class="step-form active" id="step1">
+      <div class="form-title">¿Cuál es tu negocio? 🏪</div>
+      <div class="form-sub">Lo básico primero. Todo esto lo podés editar después.</div>
+
+      <div class="field" id="f-nombre">
+        <label>Nombre del negocio <span class="req">*</span></label>
+        <input type="text" id="inp-nombre" placeholder="Ej: Panadería Doña Rosa" oninput="updatePreview()" autocomplete="organization"/>
+        <div class="err-msg">⚠ Ingresá el nombre de tu negocio</div>
+      </div>
+
+      <div class="field"><label>Categoría <span class="req">*</span></label></div>
+      <div class="cat-grid" id="catGrid">
+        <div class="cat-opt" onclick="selectCat(this,'comida','🍽')">
+          <div class="co-ico">🍽</div><div class="co-name">Comida</div><div class="co-desc">Cocina, almuerzos</div>
+        </div>
+        <div class="cat-opt" onclick="selectCat(this,'comida','🍞')">
+          <div class="co-ico">🍞</div><div class="co-name">Panadería</div><div class="co-desc">Pan, repostería</div>
+        </div>
+        <div class="cat-opt" onclick="selectCat(this,'mini_market','🛒')">
+          <div class="co-ico">🛒</div><div class="co-name">Almacén</div><div class="co-desc">Abarrotes, botillería</div>
+        </div>
+        <div class="cat-opt" onclick="selectCat(this,'otros','🔧')">
+          <div class="co-ico">🔧</div><div class="co-name">Servicios</div><div class="co-desc">Gasfiter, electricista</div>
+        </div>
+        <div class="cat-opt" onclick="selectCat(this,'peluqueria','✂️')">
+          <div class="co-ico">✂️</div><div class="co-name">Belleza</div><div class="co-desc">Peluquería, manicure</div>
+        </div>
+        <div class="cat-opt" onclick="selectCat(this,'otros','✨')">
+          <div class="co-ico">✨</div><div class="co-name">Emprendimiento</div><div class="co-desc">Artesanía, otros</div>
+        </div>
+      </div>
+      <div class="field" id="f-cat">
+        <div class="err-msg" style="margin-top:-.6rem;margin-bottom:.8rem">⚠ Seleccioná una categoría</div>
+      </div>
+
+      <div class="field-row">
+        <div class="field" id="f-ciudad">
+          <label>Ciudad <span class="req">*</span></label>
+          <input type="text" id="inp-ciudad" placeholder="Ej: Temuco" oninput="updatePreview();scheduleGeo()" autocomplete="address-level2"/>
+          <div class="err-msg">⚠ Ingresá la ciudad</div>
+        </div>
+        <div class="field">
+          <label>Comuna / Barrio</label>
+          <input type="text" id="inp-comuna" placeholder="Ej: Labranza" oninput="scheduleGeo()" autocomplete="address-level3"/>
+        </div>
+      </div>
+
+      <div class="field" id="f-dir">
+        <label>Dirección <span class="req">*</span></label>
+        <button type="button" class="btn-gps-loc" id="btnGpsLoc" onclick="usarUbicacionActual()">
+          📍 Usar mi ubicación actual
+        </button>
+        <div class="dir-divider">o escribí la dirección</div>
+        <input type="text" id="inp-dir" placeholder="Ej: Calle Los Aromos 312" oninput="updatePreview();scheduleGeo()" autocomplete="street-address"/>
+        <div class="err-msg">⚠ Ingresá la dirección o usá el botón de ubicación</div>
+        <div class="geo-wrap" id="geoWrap">
+          <div class="geo-status" id="geoStatus">
+            <span class="gs-ico">📍</span>
+            <span class="gs-text">Escribí la dirección o usá el botón GPS</span>
+          </div>
+          <div style="position:relative">
+            <div id="miniMap"></div>
+            <div class="map-hint" id="mapHint" style="display:none">Arrastrá el pin para ajustar</div>
+          </div>
+        </div>
+        <input type="hidden" id="inp-lat"/>
+        <input type="hidden" id="inp-lng"/>
+      </div>
+
+      <div class="field">
+        <label>Descripción breve <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <textarea id="inp-desc" placeholder="Ej: Pan artesanal recién horneado todos los días desde las 7am." maxlength="120"></textarea>
+        <div class="hint">Máximo 120 caracteres · <span id="charCount">0</span>/120</div>
+      </div>
+
+      <button class="btn-next" onclick="goStep(2)">Continuar → Horario</button>
+    </div>
+
+    <!-- ════ PASO 2 ════ -->
+    <div class="step-form" id="step2">
+      <div class="form-title">¿Cuándo atendís? 🗓️</div>
+      <div class="form-sub">Para que los vecinos sepan cuándo ir a buscarte.</div>
+
+      <div class="field">
+        <label>Días de atención</label>
+        <div class="days-grid">
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Lun')">Lun</button>
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Mar')">Mar</button>
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Mié')">Mié</button>
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Jue')">Jue</button>
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Vie')">Vie</button>
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Sáb')">Sáb</button>
+          <button type="button" class="day-btn" onclick="toggleDay(this,'Dom')">Dom</button>
+        </div>
+        <div class="hint">Seleccionados: <strong id="daysDisplay">ninguno</strong></div>
+      </div>
+
+      <div class="field">
+        <label>Horario de atención</label>
+        <div class="horario-wrap">
+          <input type="time" id="inp-desde" value="08:00" oninput="updatePreview()"/>
+          <span class="horario-sep">hasta</span>
+          <input type="time" id="inp-hasta" value="18:00" oninput="updatePreview()"/>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>¿Atendés a domicilio?</label>
+        <select id="inp-domicilio">
+          <option value="no">No, solo en mi local</option>
+          <option value="si">Sí, voy al domicilio</option>
+          <option value="ambos">Ambas opciones</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Observaciones de horario <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <input type="text" id="inp-horario-obs" placeholder="Ej: Sábados solo hasta las 14:00"/>
+      </div>
+
+      <button class="btn-next" onclick="goStep(3)">Continuar → Contacto</button>
+      <button class="btn-back" onclick="goStep(1)">← Volver</button>
+    </div>
+
+    <!-- ════ PASO 3 ════ -->
+    <div class="step-form" id="step3">
+      <div class="form-title">¿Cómo te contactan? 📱</div>
+      <div class="form-sub">Vos decidís qué info es pública. El WhatsApp es solo para que te avisemos cuando estés aprobado.</div>
+
+      <div class="visibility-notice">
+        <span style="font-size:1rem;flex-shrink:0">👁</span>
+        <span>Instagram y Facebook <strong>siempre serán públicos</strong> si los completás. Tu WhatsApp solo aparece si lo autorizás abajo.</span>
+      </div>
+
+      <!-- WhatsApp -->
+      <div class="field" id="f-wsp">
+        <label>WhatsApp <span class="req">*</span></label>
+        <div class="red-field">
+          <span class="red-icon">💬</span>
+          <input type="tel" id="inp-wsp" placeholder="+56 9 XXXX XXXX" oninput="updatePreview()" autocomplete="tel"/>
+        </div>
+        <div class="hint">🔒 Solo para avisarte cuando estés aprobado. No se muestra en el mapa a menos que lo autorices.</div>
+        <label class="privacy-check">
+          <input type="checkbox" id="chk-wsp-pub" onchange="updatePreview()"/>
+          <span>Quiero que mi WhatsApp sea visible para los clientes en el mapa</span>
+        </label>
+        <div class="err-msg">⚠ Ingresá tu WhatsApp para que podamos avisarte</div>
+      </div>
+
+      <!-- Instagram -->
+      <div class="field">
+        <label>Instagram <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <div class="red-field">
+          <span class="red-icon">📸</span>
+          <input type="text" id="inp-ig" placeholder="@tu_negocio"/>
+        </div>
+        <div class="public-hint">Será público en el mapa si lo completás</div>
+      </div>
+
+      <!-- Facebook -->
+      <div class="field">
+        <label>Facebook <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <div class="red-field">
+          <span class="red-icon">📘</span>
+          <input type="text" id="inp-fb" placeholder="facebook.com/tu-negocio"/>
+        </div>
+        <div class="public-hint">Será público en el mapa si lo completás</div>
+      </div>
+
+      <button class="btn-next" onclick="goStep(4)">Continuar → Confirmar</button>
+      <button class="btn-back" onclick="goStep(2)">← Volver</button>
+    </div>
+
+    <!-- ════ PASO 4 ════ -->
+    <div class="step-form" id="step4">
+      <div class="form-title">Revisá tu negocio 👀</div>
+      <div class="form-sub">Así va a aparecer en el mapa. Lo que ves aquí es lo que verá la gente.</div>
+
+      <div class="preview-card">
+        <div class="pc-head" id="pcHead" style="background:linear-gradient(135deg,#FDEBD0,#F5C99E)">🏪</div>
+        <div class="pc-body">
+          <div class="pc-name" id="pcName">Tu negocio</div>
+          <div class="pc-cat"  id="pcCat">Categoría · Ciudad</div>
+          <div class="pc-info">
+            <div class="pc-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+              <span id="pcDir">Dirección</span>
+            </div>
+            <div class="pc-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              <span id="pcDias">Días de atención</span>
+            </div>
+            <div class="pc-row">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              <span id="pcHora">Horario</span>
+            </div>
+            <div class="pc-row" id="pcWspRow" style="display:none">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+              <span id="pcWsp"></span><span class="pub-tag">✓ público</span>
+            </div>
+            <div class="pc-row" id="pcIgRow" style="display:none">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+              <span id="pcIg"></span><span class="pub-tag">✓ público</span>
+            </div>
+            <div class="pc-row" id="pcFbRow" style="display:none">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+              <span id="pcFb"></span><span class="pub-tag">✓ público</span>
+            </div>
+            <div class="pc-row" id="pcGeoRow" style="display:none">
+              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+              <span style="color:var(--sage);font-weight:600">📍 Ubicación confirmada en el mapa</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="error-banner" id="errorBanner">
+        ⚠️ <span id="errorMsg">Hubo un problema. Intentá de nuevo.</span>
+      </div>
+
+      <div class="field">
+        <label style="font-weight:400;cursor:pointer;flex-direction:row;align-items:flex-start;gap:.6rem">
+          <input type="checkbox" id="chk-terms" style="width:auto;margin-top:3px;accent-color:var(--terra);flex-shrink:0"/>
+          <span style="font-size:.83rem;color:var(--dust);line-height:1.5">Acepto que TuBarrio publique esta información de mi negocio en la plataforma.</span>
+        </label>
+      </div>
+
+      <button class="btn-next green" id="submitBtn" onclick="submitForm()">
+        🚀 Registrar mi negocio gratis
+      </button>
+      <button class="btn-back" onclick="goStep(3)">← Volver a editar</button>
+    </div>
+
+    <!-- SUCCESS -->
+    <div class="success-screen" id="successScreen">
+      <div class="success-ico">🎉</div>
+      <h2>¡Listo po! 🇨🇱</h2>
+      <p>Recibimos tu registro. Lo revisamos en menos de 24 horas y te avisamos por WhatsApp cuando estés publicado en el mapa.</p>
+      <div class="steps-list">
+        <div class="step-item" style="animation-delay:.1s"><span class="si">✅</span><span><strong>Registro recibido</strong> — ya tenemos tu info</span></div>
+        <div class="step-item" style="animation-delay:.2s"><span class="si">🔍</span><span><strong>Revisión</strong> — verificamos los datos en 24 hrs</span></div>
+        <div class="step-item" style="animation-delay:.3s"><span class="si">📍</span><span><strong>Publicación</strong> — aparecés en el mapa del barrio</span></div>
+        <div class="step-item" style="animation-delay:.4s"><span class="si">👥</span><span><strong>Visibilidad</strong> — los vecinos te encuentran al tiro</span></div>
+      </div>
+      <button class="btn-next" onclick="window.location.href='{% url 'index' %}'" style="max-width:280px;margin:0 auto">
+        Ver el mapa →
+      </button>
+    </div>
+
+  </div><!-- /right-panel -->
+</div><!-- /page-wrap -->
+
+<div class="toast-reg" id="toastReg"></div>
+
+<script>
+/* ════ STATE ════ */
+const ST = {
+  cat:'', catIco:'', lat:null, lng:null,
+  dias:[], desde:'08:00', hasta:'18:00'
+};
+let currentStep = 1, floatVisible = true;
+
+const CAT_BG = {
+  comida:'linear-gradient(135deg,#FDEBD0,#F5C99E)',
+  mini_market:'linear-gradient(135deg,#D5E8D4,#A2D09E)',
+  peluqueria:'linear-gradient(135deg,#F8D7DA,#F0A4AA)',
+  otros:'linear-gradient(135deg,#DAE8FC,#A4C4E8)',
+};
+const CAT_LABEL = {comida:'Comida',mini_market:'Almacén',peluqueria:'Belleza',otros:'Emprendimiento'};
+
+/* ════ MINI MAPA ════ */
+let miniMap = null, miniMarker = null;
+function initMiniMap(lat, lng) {
+  const el = document.getElementById('miniMap');
+  el.classList.add('visible');
+  document.getElementById('mapHint').style.display = 'block';
+  if (!miniMap) {
+    miniMap = L.map('miniMap',{zoomControl:true,scrollWheelZoom:false}).setView([lat,lng],16);
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',{
+      attribution:'© OpenStreetMap © CARTO',maxZoom:19
+    }).addTo(miniMap);
+    miniMarker = L.marker([lat,lng],{draggable:true}).addTo(miniMap);
+    miniMarker.on('dragend', e => {
+      const p = e.target.getLatLng();
+      ST.lat = p.lat; ST.lng = p.lng;
+      document.getElementById('inp-lat').value = p.lat;
+      document.getElementById('inp-lng').value = p.lng;
+      setGeoStatus('ok','✅','Ubicación ajustada. Podés seguir arrastrando el pin.',`${p.lat.toFixed(5)}, ${p.lng.toFixed(5)}`);
+      updatePreview();
+    });
+  } else {
+    miniMap.setView([lat,lng],16);
+    miniMarker.setLatLng([lat,lng]);
+    miniMap.invalidateSize();
+  }
+}
+
+/* ════ GPS ════ */
+function usarUbicacionActual() {
+  const btn = document.getElementById('btnGpsLoc');
+  if (!navigator.geolocation) { showToast('Tu navegador no soporta GPS'); return; }
+  btn.disabled = true;
+  btn.innerHTML = '⏳ Obteniendo ubicación…';
+  setGeoStatus('loading','⏳','Obteniendo tu ubicación…','');
+  setGeoClass('loading');
+
+  navigator.geolocation.getCurrentPosition(
+    async pos => {
+      const {latitude:lat,longitude:lng} = pos.coords;
+      ST.lat = lat; ST.lng = lng;
+      document.getElementById('inp-lat').value = lat;
+      document.getElementById('inp-lng').value = lng;
+      initMiniMap(lat,lng);
+      setGeoStatus('ok','✅','¡Ubicación obtenida! Podés mover el pin para afinar.',`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      setGeoClass('ok');
+      updatePreview();
+      btn.innerHTML = '🔍 Buscando dirección…';
+      try {
+        const res  = await fetch(`https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es`,{headers:{'User-Agent':'TuBarrio/1.0'}});
+        const data = await res.json();
+        if (data?.address) {
+          const a = data.address;
+          const calle  = a.road||a.pedestrian||a.path||'';
+          const numero = a.house_number||'';
+          const ciudad = a.city||a.town||a.village||a.municipality||'';
+          const comuna = a.suburb||a.neighbourhood||a.quarter||'';
+          if (calle) document.getElementById('inp-dir').value = [calle,numero].filter(Boolean).join(' ');
+          if (ciudad && !document.getElementById('inp-ciudad').value) document.getElementById('inp-ciudad').value = ciudad;
+          if (comuna && !document.getElementById('inp-comuna').value) document.getElementById('inp-comuna').value = comuna;
+          setGeoStatus('ok','✅','Dirección detectada automáticamente. Podés editarla si es necesario.',`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+          updatePreview();
+        }
+      } catch(e){}
+      btn.disabled = false;
+      btn.innerHTML = '✅ Ubicación guardada — tocá para actualizar';
+    },
+    err => {
+      btn.disabled = false;
+      btn.innerHTML = '📍 Usar mi ubicación actual';
+      const msgs = {1:'Permiso denegado. Activá la ubicación en tu navegador.',2:'Ubicación no disponible. Escribí la dirección.',3:'Tardó demasiado. Intentá de nuevo.'};
+      setGeoStatus('fail','⚠️',msgs[err.code]||'No se pudo obtener la ubicación.','');
+      setGeoClass('fail');
+    },
+    {enableHighAccuracy:true,timeout:10000,maximumAge:0}
+  );
+}
+
+/* ════ GEOCODIFICACIÓN ════ */
+let geoTimer = null;
+function scheduleGeo() {
+  clearTimeout(geoTimer);
+  const dir    = document.getElementById('inp-dir').value.trim();
+  const ciudad = document.getElementById('inp-ciudad').value.trim();
+  if (!dir || !ciudad) return;
+  geoTimer = setTimeout(() => geocode(dir, ciudad, document.getElementById('inp-comuna').value.trim()), 900);
+}
+async function geocode(dir, ciudad, comuna) {
+  const query = [dir, comuna, ciudad, 'Chile'].filter(Boolean).join(', ');
+  setGeoStatus('loading','⏳','Buscando en el mapa…','');
+  setGeoClass('loading');
+  try {
+    const res  = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=cl`,{headers:{'Accept-Language':'es','User-Agent':'TuBarrio/1.0'}});
+    const data = await res.json();
+    if (data?.length) {
+      const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+      ST.lat = lat; ST.lng = lng;
+      document.getElementById('inp-lat').value = lat;
+      document.getElementById('inp-lng').value = lng;
+      setGeoStatus('ok','✅','¡Ubicación encontrada! Mové el pin si no es exacto.',`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      setGeoClass('ok');
+      initMiniMap(lat,lng);
+      updatePreview();
+    } else {
+      await geocodeFallback(ciudad);
+    }
+  } catch(e) {
+    setGeoStatus('fail','⚠️','Sin conexión para geocodificar. Podés continuar igual.','');
+    setGeoClass('fail');
+  }
+}
+async function geocodeFallback(ciudad) {
+  try {
+    const res  = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ciudad+', Chile')}&format=json&limit=1&countrycodes=cl`,{headers:{'Accept-Language':'es','User-Agent':'TuBarrio/1.0'}});
+    const data = await res.json();
+    if (data?.length) {
+      const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
+      ST.lat = lat; ST.lng = lng;
+      document.getElementById('inp-lat').value = lat;
+      document.getElementById('inp-lng').value = lng;
+      setGeoStatus('ok','🏙️','Usamos el centro de '+ciudad+'. Mové el pin para afinar.',`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+      setGeoClass('ok');
+      initMiniMap(lat,lng);
+      updatePreview();
+    } else {
+      setGeoStatus('fail','❓','No encontramos la dirección. Podés continuar igual.','');
+      setGeoClass('fail');
+    }
+  } catch(e) {
+    setGeoStatus('fail','⚠️','Sin conexión. Podés continuar igual.','');
+    setGeoClass('fail');
+  }
+}
+function setGeoStatus(type, ico, text, coords) {
+  document.getElementById('geoStatus').innerHTML = `
+    <span class="gs-ico">${ico}</span>
+    <span class="gs-text">${text}</span>
+    ${coords?`<span class="gs-coords">${coords}</span>`:''}
+    ${type==='fail'?`<button class="btn-retry" onclick="scheduleGeo()">Reintentar</button>`:''}`;
+}
+function setGeoClass(cls) { document.getElementById('geoWrap').className = 'geo-wrap '+cls; }
+
+/* ════ NAVEGACIÓN PASOS ════ */
+function goStep(n) {
+  if (n > currentStep && !validateStep(currentStep)) return;
+  currentStep = n;
+  document.querySelectorAll('.step-form').forEach(f => f.classList.remove('active'));
+  document.getElementById('successScreen').classList.remove('active');
+  const el = document.getElementById('step'+n);
+  if (el) el.classList.add('active');
+
+  document.getElementById('progressBar').style.width = (n/4*100)+'%';
+  for (let i=1; i<=4; i++) {
+    document.getElementById('si'+i).className = 'si-dot'+(i<n?' done':i===n?' active':'');
+    const sl = document.getElementById('sl'+i);
+    if (sl) sl.className = 'si-line'+(i<n?' done':'');
+  }
+  document.getElementById('rightPanel').scrollTo({top:0,behavior:'smooth'});
+  updatePreview();
+
+  const pf = document.getElementById('previewFloat');
+  if (n === 4) pf.classList.add('hidden');
+  else { if (document.getElementById('inp-nombre')?.value.trim()) pf.classList.remove('hidden'); }
+  if (n === 1 && miniMap) setTimeout(() => miniMap.invalidateSize(), 250);
+}
+
+function validateStep(step) {
+  if (step === 1) {
+    const nombre = document.getElementById('inp-nombre').value.trim();
+    const ciudad = document.getElementById('inp-ciudad').value.trim();
+    const dir    = document.getElementById('inp-dir').value.trim();
+    const dirOk  = !!dir || ST.lat !== null;
+    const catOk  = !!ST.cat;
+    setErr('f-nombre', !nombre);
+    setErr('f-ciudad', !ciudad);
+    setErr('f-dir',    !dirOk);
+    const ce = document.querySelector('#f-cat .err-msg');
+    if (ce) ce.style.display = catOk ? 'none':'flex';
+    if (!nombre||!ciudad||!dirOk||!catOk) {
+      showToast('Completá los campos obligatorios ☝️');
+      return false;
+    }
+    return true;
+  }
+  if (step === 3) {
+    const wsp = document.getElementById('inp-wsp').value.trim();
+    setErr('f-wsp', !wsp);
+    if (!wsp) { showToast('Necesitamos tu WhatsApp para avisarte 📲'); return false; }
+    return true;
+  }
+  return true;
+}
+function setErr(id, hasErr) {
+  const f = document.getElementById(id);
+  if (!f) return;
+  f.classList.toggle('has-err', hasErr);
+  const inp = f.querySelector('input,select,textarea');
+  if (inp) inp.classList.toggle('err', hasErr);
+}
+
+/* ════ CATEGORÍA ════ */
+function selectCat(el, cat, ico) {
+  document.querySelectorAll('.cat-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  ST.cat = cat; ST.catIco = ico;
+  const ce = document.querySelector('#f-cat .err-msg');
+  if (ce) ce.style.display = 'none';
+  updatePreview();
+}
+
+/* ════ DÍAS ════ */
+function toggleDay(btn, day) {
+  btn.classList.toggle('on');
+  const idx = ST.dias.indexOf(day);
+  if (idx > -1) ST.dias.splice(idx,1); else ST.dias.push(day);
+  const order = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+  ST.dias.sort((a,b) => order.indexOf(a)-order.indexOf(b));
+  document.getElementById('daysDisplay').textContent = ST.dias.length ? ST.dias.join(', ') : 'ninguno';
+  updatePreview();
+}
+
+/* ════ CHAR COUNTER ════ */
+document.getElementById('inp-desc').addEventListener('input', function() {
+  document.getElementById('charCount').textContent = this.value.length;
+});
+
+/* ════ TOGGLE PREVIEW ════ */
+function toggleFloat() {
+  const pf  = document.getElementById('previewFloat');
+  const btn = document.getElementById('pfToggleBtn');
+  const body = pf.querySelector('.pf-body');
+  floatVisible = !floatVisible;
+  body.style.display = floatVisible ? '' : 'none';
+  btn.textContent    = floatVisible ? 'ocultar' : 'ver';
+}
+
+/* ════ UPDATE PREVIEW ════ */
+function updatePreview() {
+  const nombre = document.getElementById('inp-nombre')?.value || '';
+  const ciudad = document.getElementById('inp-ciudad')?.value || '';
+  const dir    = document.getElementById('inp-dir')?.value    || '';
+  const desde  = document.getElementById('inp-desde')?.value  || '08:00';
+  const hasta  = document.getElementById('inp-hasta')?.value  || '18:00';
+  const wsp    = document.getElementById('inp-wsp')?.value    || '';
+  const ig     = document.getElementById('inp-ig')?.value     || '';
+  const fb     = document.getElementById('inp-fb')?.value     || '';
+  const wspPub = document.getElementById('chk-wsp-pub')?.checked || false;
+
+  const catLbl  = ST.cat ? (CAT_LABEL[ST.cat]||ST.cat) : 'Categoría';
+  const hora    = desde + ' – ' + hasta;
+  const dirTxt  = dir || 'Dirección';
+  const catCity = catLbl + (ciudad ? ' · '+ciudad : '');
+  const bg      = CAT_BG[ST.cat] || CAT_BG.comida;
+  const ico     = ST.catIco || '🏪';
+
+  // Paso 4 preview card
+  const pcHead = document.getElementById('pcHead');
+  if (pcHead) { pcHead.style.background = bg; pcHead.textContent = ico; }
+  const set = (id,v) => { const el=document.getElementById(id); if(el) el.textContent=v; };
+  const show = (id,v) => { const el=document.getElementById(id); if(el) el.style.display=v?'flex':'none'; };
+  set('pcName', nombre || 'Tu negocio');
+  set('pcCat',  catCity);
+  set('pcDir',  dirTxt);
+  set('pcDias', ST.dias.length ? ST.dias.join(', ') : 'Días de atención');
+  set('pcHora', hora);
+  if (wspPub && wsp) { show('pcWspRow',true); set('pcWsp',wsp); } else show('pcWspRow',false);
+  if (ig) { show('pcIgRow',true); set('pcIg',ig); } else show('pcIgRow',false);
+  if (fb) { show('pcFbRow',true); set('pcFb',fb); } else show('pcFbRow',false);
+  show('pcGeoRow', !!ST.lat);
+
+  // Preview flotante
+  const pfHead = document.getElementById('pfHead');
+  if (pfHead) {
+    pfHead.style.background = bg;
+    let tn = null;
+    pfHead.childNodes.forEach(n => { if(n.nodeType===3) tn=n; });
+    if (tn) tn.textContent = ico;
+    else pfHead.insertBefore(document.createTextNode(ico), pfHead.firstChild);
+  }
+  set('pfName', nombre || 'Tu negocio');
+  set('pfCat',  catCity);
+  set('pfDir',  dirTxt);
+  set('pfHora', hora);
+  const pfGeoRow = document.getElementById('pfGeoRow');
+  if (pfGeoRow) pfGeoRow.style.display = ST.lat ? 'flex' : 'none';
+
+  // Mostrar/ocultar preview
+  const pf = document.getElementById('previewFloat');
+  if (currentStep !== 4) {
+    nombre.trim() ? pf.classList.remove('hidden') : pf.classList.add('hidden');
+  }
+}
+
+/* ════ SUBMIT ════ */
+async function submitForm() {
+  if (!document.getElementById('chk-terms').checked) {
+    showToast('Aceptá los términos para continuar ☝️');
+    return;
+  }
+  document.getElementById('errorBanner').classList.remove('show');
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando…';
+
+  const desde = document.getElementById('inp-desde').value || '08:00';
+  const hasta  = document.getElementById('inp-hasta').value || '18:00';
+  const diasStr = ST.dias.length ? ST.dias.join(', ') : 'A convenir';
+  const diasAtencion = diasStr + ' · ' + desde + '–' + hasta;
+
+  const ciudad = document.getElementById('inp-ciudad').value.trim();
+  const comuna = document.getElementById('inp-comuna').value.trim();
+  const dir    = document.getElementById('inp-dir').value.trim();
+  const dirCompleta = [dir, comuna, ciudad].filter(Boolean).join(', ');
+
+  const payload = new URLSearchParams({
+    csrfmiddlewaretoken: document.querySelector('meta[name="csrf-token"]').content,
+    nombre:       document.getElementById('inp-nombre').value.trim(),
+    tipo:         ST.cat || 'otros',
+    direccion:    dirCompleta,
+    ciudad,
+    comuna,
+    dias_atencion: diasAtencion,
+    descripcion:  document.getElementById('inp-desc').value.trim(),
+    whatsapp:     document.getElementById('inp-wsp').value.trim(),
+    wsp_publico:  document.getElementById('chk-wsp-pub').checked ? 'si' : 'no',
+    instagram:    document.getElementById('inp-ig').value.trim(),
+    facebook:     document.getElementById('inp-fb').value.trim(),
+    domicilio:    document.getElementById('inp-domicilio').value,
+    horario_obs:  document.getElementById('inp-horario-obs').value.trim(),
+    latitud:      ST.lat ?? '',
+    longitud:     ST.lng ?? '',
+  });
+
+  try {
+    const res = await fetch(window.location.href, {
+      method:'POST',
+      headers:{'Content-Type':'application/x-www-form-urlencoded'},
+      body:payload.toString(),
+    });
+    if (res.ok) {
+      document.getElementById('step4').classList.remove('active');
+      document.getElementById('progressBar').style.width = '100%';
+      for (let i=1;i<=4;i++) {
+        document.getElementById('si'+i).className = 'si-dot done';
+        const sl = document.getElementById('sl'+i);
+        if (sl) sl.className = 'si-line done';
+      }
+      document.getElementById('successScreen').classList.add('active');
+      document.getElementById('previewFloat').classList.add('hidden');
+      document.getElementById('rightPanel').scrollTo({top:0,behavior:'smooth'});
+    } else {
+      document.getElementById('errorMsg').textContent = 'Error del servidor ('+res.status+'). Intentá de nuevo.';
+      document.getElementById('errorBanner').classList.add('show');
+      btn.disabled = false;
+      btn.innerHTML = '🚀 Registrar mi negocio gratis';
+    }
+  } catch(e) {
+    document.getElementById('errorMsg').textContent = 'Sin conexión. Revisá tu internet.';
+    document.getElementById('errorBanner').classList.add('show');
+    btn.disabled = false;
+    btn.innerHTML = '🚀 Registrar mi negocio gratis';
+  }
+}
+
+/* ════ TOAST ════ */
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toastReg');
+  clearTimeout(toastTimer);
+  t.textContent = msg;
+  t.classList.add('show');
+  toastTimer = setTimeout(() => t.classList.remove('show'), 3200);
+}
+
+updatePreview();
+</script>
+</body>
+</html>

@@ -1,0 +1,523 @@
+{% extends 'admin/index.html' %}
+{% load i18n %}
+
+{% block content %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Fraunces:wght@700;900&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap');
+
+* { box-sizing: border-box; }
+
+.tb { font-family: 'DM Sans', sans-serif; padding: 0 0 2.5rem; color: #e2e8f0; }
+
+/* ── TOP BAR ── */
+.tb-topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 1.5rem; gap: 1rem; flex-wrap: wrap;
+}
+.tb-title {
+  font-family: 'Fraunces', serif; font-size: 1.6rem; font-weight: 900;
+  color: #fff; letter-spacing: -0.02em; margin: 0;
+}
+.tb-title span { color: #F59E0B; }
+.tb-subtitle { font-size: 0.8rem; color: #64748b; margin: 0.1rem 0 0; }
+.tb-date-badge {
+  background: #1e293b; border: 1px solid #334155; border-radius: 8px;
+  padding: 0.4rem 0.9rem; font-size: 0.78rem; color: #94a3b8; font-weight: 500;
+}
+
+/* ── KPI ROW ── */
+.tb-kpis {
+  display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.tb-kpi {
+  background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+  padding: 1.3rem 1.5rem; position: relative; overflow: hidden;
+  transition: transform 0.2s ease, border-color 0.2s ease; cursor: default;
+}
+.tb-kpi:hover { transform: translateY(-3px); border-color: #334155; }
+.tb-kpi::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--kpi-color, #F59E0B); border-radius: 14px 14px 0 0;
+}
+.tb-kpi-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.8rem; }
+.tb-kpi-label { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: #64748b; }
+.tb-kpi-icon {
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--kpi-bg, rgba(245,158,11,0.1));
+  display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.tb-kpi-value {
+  font-family: 'Fraunces', serif; font-size: 2.5rem; font-weight: 900;
+  color: #fff; line-height: 1; letter-spacing: -0.04em; margin-bottom: 0.35rem;
+}
+.tb-kpi-sub { font-size: 0.75rem; color: #475569; display: flex; align-items: center; gap: 0.3rem; }
+.tb-kpi-trend { font-weight: 600; }
+.tb-kpi-trend.up { color: #22c55e; }
+.tb-kpi-trend.warn { color: #F59E0B; }
+
+/* ── GRID ── */
+.tb-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.tb-grid-3 { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+
+/* ── PANEL ── */
+.tb-panel {
+  background: #0f172a; border: 1px solid #1e293b; border-radius: 14px;
+  overflow: hidden; display: flex; flex-direction: column;
+}
+.tb-panel-header {
+  padding: 1rem 1.4rem; border-bottom: 1px solid #1e293b;
+  display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+}
+.tb-panel-title {
+  font-family: 'Fraunces', serif; font-size: 0.95rem; font-weight: 700;
+  color: #f1f5f9; margin: 0; display: flex; align-items: center; gap: 0.5rem;
+}
+.tb-panel-badge {
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 20px; background: rgba(245,158,11,0.12); color: #F59E0B;
+}
+.tb-panel-link { font-size: 0.75rem; color: #F59E0B; text-decoration: none; font-weight: 500; white-space: nowrap; }
+.tb-panel-link:hover { text-decoration: underline; }
+.tb-panel-body { padding: 1.2rem 1.4rem; flex: 1; }
+
+/* ── CHART WRAPPERS ── */
+.tb-chart-wrap { position: relative; width: 100%; }
+.tb-chart-wrap.h260 { height: 260px; }
+.tb-chart-wrap.h200 { height: 200px; }
+.tb-chart-wrap.h180 { height: 180px; }
+
+/* ── TABLA RECIENTES ── */
+.tb-table { width: 100%; border-collapse: collapse; }
+.tb-table th {
+  font-size: 0.67rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase;
+  color: #475569; padding: 0 0 0.6rem; text-align: left; border-bottom: 1px solid #1e293b;
+}
+.tb-table td { padding: 0.7rem 0; border-bottom: 1px solid #0d1526; vertical-align: middle; font-size: 0.82rem; }
+.tb-table tr:last-child td { border-bottom: none; }
+.tb-table tr:hover td { background: rgba(255,255,255,0.02); }
+.tb-table td:first-child { color: #cbd5e1; font-weight: 500; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tb-table td:first-child a { color: #cbd5e1; text-decoration: none; }
+.tb-table td:first-child a:hover { color: #F59E0B; }
+
+/* ── BADGES ── */
+.tb-badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  padding: 3px 9px; border-radius: 20px; white-space: nowrap;
+}
+.tb-badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; display: inline-block; }
+.badge-aprobado   { background: rgba(34,197,94,0.12);  color: #22c55e; }
+.badge-pendiente  { background: rgba(245,158,11,0.12); color: #F59E0B; }
+.badge-comida     { background: rgba(239,68,68,0.12);  color: #ef4444; }
+.badge-peluqueria { background: rgba(168,85,247,0.12); color: #a855f7; }
+.badge-mini_market{ background: rgba(34,197,94,0.12);  color: #22c55e; }
+.badge-otros      { background: rgba(100,116,139,0.12);color: #64748b; }
+
+/* ── GAUGE ── */
+.tb-gauge-wrap { display: flex; flex-direction: column; align-items: center; gap: 0.5rem; padding: 0.5rem 0; }
+.tb-gauge-label { font-size: 0.75rem; color: #64748b; font-weight: 500; }
+.tb-gauge-value { font-family: 'Fraunces', serif; font-size: 1.8rem; font-weight: 900; color: #fff; line-height: 1; }
+.tb-gauge-sub { font-size: 0.7rem; color: #475569; }
+
+/* ── PROGRESS BARS ── */
+.tb-progress-item { margin-bottom: 1rem; }
+.tb-progress-item:last-child { margin-bottom: 0; }
+.tb-progress-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem; }
+.tb-progress-name { font-size: 0.8rem; font-weight: 500; color: #94a3b8; }
+.tb-progress-count { font-size: 0.8rem; font-weight: 700; color: #e2e8f0; }
+.tb-progress-track { height: 6px; background: #1e293b; border-radius: 3px; overflow: hidden; }
+.tb-progress-bar { height: 100%; border-radius: 3px; transition: width 1s cubic-bezier(0.34,1.56,0.64,1); }
+
+/* ── ACCIONES ── */
+.tb-action-list { display: flex; flex-direction: column; gap: 0.5rem; }
+.tb-action-btn {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.7rem 0.9rem;
+  border-radius: 10px; text-decoration: none; font-size: 0.83rem; font-weight: 500;
+  color: #94a3b8; background: #0a1120; border: 1px solid #1e293b;
+  transition: all 0.18s ease; cursor: pointer;
+}
+.tb-action-btn:hover { background: #F59E0B; border-color: #F59E0B; color: #0a1120; transform: translateX(3px); }
+.tb-action-btn:hover .tb-action-icon { filter: none; }
+.tb-action-icon { font-size: 1rem; width: 22px; text-align: center; }
+.tb-action-arrow { margin-left: auto; opacity: 0.4; font-size: 0.75rem; transition: opacity 0.15s; }
+.tb-action-btn:hover .tb-action-arrow { opacity: 1; }
+
+/* ── ACTIVITY FEED ── */
+.tb-feed { list-style: none; margin: 0; padding: 0; }
+.tb-feed-item { display: flex; gap: 0.75rem; padding: 0.65rem 0; border-bottom: 1px solid #0d1526; align-items: flex-start; }
+.tb-feed-item:last-child { border-bottom: none; }
+.tb-feed-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+.tb-feed-content { flex: 1; }
+.tb-feed-name { font-size: 0.82rem; font-weight: 500; color: #cbd5e1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-feed-meta { font-size: 0.72rem; color: #475569; margin-top: 1px; }
+</style>
+
+<div class="tb">
+
+  <!-- TOP BAR -->
+  <div class="tb-topbar">
+    <div>
+      <h1 class="tb-title">Tu<span>Barrio</span> Analytics</h1>
+      <p class="tb-subtitle">Panel de control · Loncoche, Araucanía</p>
+    </div>
+    <div class="tb-date-badge" id="tb-live-date">Cargando...</div>
+  </div>
+
+  <!-- KPIs -->
+  <div class="tb-kpis">
+    <div class="tb-kpi" style="--kpi-color:#F59E0B;--kpi-bg:rgba(245,158,11,0.1)">
+      <div class="tb-kpi-header">
+        <span class="tb-kpi-label">Total Negocios</span>
+        <div class="tb-kpi-icon">🏪</div>
+      </div>
+      <div class="tb-kpi-value">{{ total_negocios }}</div>
+      <div class="tb-kpi-sub"><span class="tb-kpi-trend up">↑</span> Registrados en el sistema</div>
+    </div>
+    <div class="tb-kpi" style="--kpi-color:#22c55e;--kpi-bg:rgba(34,197,94,0.1)">
+      <div class="tb-kpi-header">
+        <span class="tb-kpi-label">Aprobados</span>
+        <div class="tb-kpi-icon">✅</div>
+      </div>
+      <div class="tb-kpi-value">{{ aprobados }}</div>
+      <div class="tb-kpi-sub"><span class="tb-kpi-trend up">↑</span> Visibles en el sitio</div>
+    </div>
+    <div class="tb-kpi" style="--kpi-color:#F59E0B;--kpi-bg:rgba(245,158,11,0.08)">
+      <div class="tb-kpi-header">
+        <span class="tb-kpi-label">Pendientes</span>
+        <div class="tb-kpi-icon">⏳</div>
+      </div>
+      <div class="tb-kpi-value">{{ pendientes }}</div>
+      <div class="tb-kpi-sub"><span class="tb-kpi-trend warn">!</span> Requieren revisión</div>
+    </div>
+    <div class="tb-kpi" style="--kpi-color:#3b82f6;--kpi-bg:rgba(59,130,246,0.1)">
+      <div class="tb-kpi-header">
+        <span class="tb-kpi-label">Con GPS</span>
+        <div class="tb-kpi-icon">📍</div>
+      </div>
+      <div class="tb-kpi-value">{{ con_ubicacion }}</div>
+      <div class="tb-kpi-sub">Con coordenadas cargadas</div>
+    </div>
+  </div>
+
+  <!-- FILA 1: Barras + Donut + Gauge -->
+  <div class="tb-grid-3">
+
+    <!-- Negocios por mes -->
+    <div class="tb-panel">
+      <div class="tb-panel-header">
+        <h3 class="tb-panel-title">📈 Registros por mes</h3>
+        <span class="tb-panel-badge">2026</span>
+      </div>
+      <div class="tb-panel-body">
+        <div class="tb-chart-wrap h260">
+          <canvas id="chartMeses"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Donut tipos -->
+    <div class="tb-panel">
+      <div class="tb-panel-header">
+        <h3 class="tb-panel-title">🗂️ Por categoría</h3>
+      </div>
+      <div class="tb-panel-body" style="display:flex;flex-direction:column;align-items:center;gap:1rem;">
+        <div class="tb-chart-wrap h180" style="width:180px;">
+          <canvas id="chartTipos"></canvas>
+        </div>
+        <div id="chartTiposLegend" style="width:100%;display:flex;flex-direction:column;gap:0.35rem;"></div>
+      </div>
+    </div>
+
+    <!-- Tasa aprobación gauge -->
+    <div class="tb-panel">
+      <div class="tb-panel-header">
+        <h3 class="tb-panel-title">🎯 Tasa aprobación</h3>
+      </div>
+      <div class="tb-panel-body" style="display:flex;flex-direction:column;gap:1.2rem;">
+        <div class="tb-gauge-wrap">
+          <div class="tb-chart-wrap h180" style="width:180px;">
+            <canvas id="chartGauge"></canvas>
+          </div>
+          <div class="tb-gauge-value" id="gaugeValue">0%</div>
+          <div class="tb-gauge-sub">Negocios aprobados vs total</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FILA 2: Tabla + Progreso + Acciones -->
+  <div class="tb-grid-3">
+
+    <!-- Últimos registros -->
+    <div class="tb-panel">
+      <div class="tb-panel-header">
+        <h3 class="tb-panel-title">🕐 Últimos registros</h3>
+        <a href="{% url 'admin:tubarrio_negocio_changelist' %}" class="tb-panel-link">Ver todos →</a>
+      </div>
+      <div class="tb-panel-body" style="padding-top:0.8rem;">
+        <table class="tb-table">
+          <thead>
+            <tr>
+              <th>Nombre</th>
+              <th>Tipo</th>
+              <th>Estado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in ultimos_negocios %}
+            <tr>
+              <td title="{{ n.nombre }}">
+                <a href="{% url 'admin:tubarrio_negocio_change' n.pk %}">{{ n.nombre|truncatechars:28 }}</a>
+              </td>
+              <td><span class="tb-badge badge-{{ n.tipo }}">{{ n.get_tipo_display }}</span></td>
+              <td><span class="tb-badge badge-{{ n.estado }}">{{ n.get_estado_display }}</span></td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="3" style="color:#475569;text-align:center;padding:1.5rem 0;">Sin registros aún</td></tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Progreso por tipo -->
+    <div class="tb-panel">
+      <div class="tb-panel-header">
+        <h3 class="tb-panel-title">📊 Distribución</h3>
+      </div>
+      <div class="tb-panel-body">
+        <div id="tb-progress-bars">
+          <!-- Generado por JS con datos del contexto -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="tb-panel">
+      <div class="tb-panel-header">
+        <h3 class="tb-panel-title">⚡ Acciones rápidas</h3>
+      </div>
+      <div class="tb-panel-body">
+        <div class="tb-action-list">
+          <a href="{% url 'admin:tubarrio_negocio_add' %}" class="tb-action-btn">
+            <span class="tb-action-icon">➕</span> Agregar negocio
+            <span class="tb-action-arrow">›</span>
+          </a>
+          <a href="{% url 'admin:tubarrio_negocio_changelist' %}?estado__exact=pendiente" class="tb-action-btn">
+            <span class="tb-action-icon">⏳</span> Ver pendientes
+            <span class="tb-action-arrow">›</span>
+          </a>
+          <a href="{% url 'admin:tubarrio_negocio_changelist' %}?estado__exact=aprobado" class="tb-action-btn">
+            <span class="tb-action-icon">✅</span> Ver aprobados
+            <span class="tb-action-arrow">›</span>
+          </a>
+          <a href="{% url 'admin:tubarrio_negocio_changelist' %}" class="tb-action-btn">
+            <span class="tb-action-icon">📋</span> Lista completa
+            <span class="tb-action-arrow">›</span>
+          </a>
+          <a href="/" target="_blank" class="tb-action-btn">
+            <span class="tb-action-icon">🌐</span> Ver sitio público
+            <span class="tb-action-arrow">›</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+// ── Datos del backend (Django template → JS) ──────────────
+const DATA = {
+  total:       {{ total_negocios }},
+  aprobados:   {{ aprobados }},
+  pendientes:  {{ pendientes }},
+  porMes:      {{ por_mes|safe }},       // [{mes: 'Ene', total: 3}, ...]
+  porTipo:     {{ por_tipo|safe }},      // [{tipo: 'Comida', total: 2}, ...]
+};
+
+// ── Fecha live ────────────────────────────────────────────
+(function() {
+  const el = document.getElementById('tb-live-date');
+  const dias = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  const now = new Date();
+  el.textContent = `${dias[now.getDay()]}, ${now.getDate()} de ${meses[now.getMonth()]} ${now.getFullYear()}`;
+})();
+
+// ── Defaults de Chart.js ──────────────────────────────────
+Chart.defaults.color = '#64748b';
+Chart.defaults.borderColor = '#1e293b';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+
+const COLORS = {
+  amber:   '#F59E0B',
+  green:   '#22c55e',
+  blue:    '#3b82f6',
+  purple:  '#a855f7',
+  red:     '#ef4444',
+  slate:   '#64748b',
+};
+
+const TIPO_COLORS = {
+  'Comida':      COLORS.red,
+  'Mini Market': COLORS.green,
+  'Peluquería':  COLORS.purple,
+  'Otros':       COLORS.slate,
+};
+
+// ── 1. Gráfico de barras — registros por mes ──────────────
+(function() {
+  const labels = DATA.porMes.map(d => d.mes);
+  const values = DATA.porMes.map(d => d.total);
+
+  new Chart(document.getElementById('chartMeses'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Negocios',
+        data: values,
+        backgroundColor: labels.map((_, i) => i === labels.length - 1
+          ? COLORS.amber
+          : 'rgba(245,158,11,0.25)'
+        ),
+        borderColor: COLORS.amber,
+        borderWidth: 1.5,
+        borderRadius: 7,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a', borderColor: '#334155', borderWidth: 1,
+          titleColor: '#f1f5f9', bodyColor: '#94a3b8',
+          callbacks: { label: ctx => ` ${ctx.parsed.y} negocio${ctx.parsed.y !== 1 ? 's' : ''}` }
+        }
+      },
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 11 } } },
+        y: {
+          grid: { color: '#1e293b' },
+          ticks: { stepSize: 1, font: { size: 11 } },
+          beginAtZero: true,
+        }
+      }
+    }
+  });
+})();
+
+// ── 2. Donut — por tipo ───────────────────────────────────
+(function() {
+  const labels = DATA.porTipo.map(d => d.tipo);
+  const values = DATA.porTipo.map(d => d.total);
+  const colors = labels.map(l => TIPO_COLORS[l] || COLORS.slate);
+
+  new Chart(document.getElementById('chartTipos'), {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: colors.map(c => c + '33'),
+        borderColor: colors,
+        borderWidth: 2,
+        hoverOffset: 6,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '70%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          backgroundColor: '#0f172a', borderColor: '#334155', borderWidth: 1,
+          titleColor: '#f1f5f9', bodyColor: '#94a3b8',
+        }
+      }
+    }
+  });
+
+  // Leyenda custom
+  const legend = document.getElementById('chartTiposLegend');
+  labels.forEach((label, i) => {
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;gap:0.5rem;';
+    row.innerHTML = `
+      <div style="display:flex;align-items:center;gap:0.5rem;">
+        <div style="width:10px;height:10px;border-radius:3px;background:${colors[i]};flex-shrink:0;"></div>
+        <span style="font-size:0.75rem;color:#94a3b8;">${label}</span>
+      </div>
+      <span style="font-size:0.75rem;font-weight:700;color:#e2e8f0;">${values[i]}</span>
+    `;
+    legend.appendChild(row);
+  });
+})();
+
+// ── 3. Gauge — tasa aprobación ────────────────────────────
+(function() {
+  const pct = DATA.total > 0 ? Math.round((DATA.aprobados / DATA.total) * 100) : 0;
+  document.getElementById('gaugeValue').textContent = pct + '%';
+
+  new Chart(document.getElementById('chartGauge'), {
+    type: 'doughnut',
+    data: {
+      datasets: [{
+        data: [pct, 100 - pct],
+        backgroundColor: [
+          pct >= 70 ? COLORS.green : pct >= 40 ? COLORS.amber : COLORS.red,
+          '#1e293b'
+        ],
+        borderWidth: 0,
+        hoverOffset: 0,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      cutout: '78%',
+      circumference: 180,
+      rotation: -90,
+      plugins: { legend: { display: false }, tooltip: { enabled: false } }
+    }
+  });
+})();
+
+// ── 4. Progress bars — distribución por tipo ──────────────
+(function() {
+  const container = document.getElementById('tb-progress-bars');
+  const colors = Object.values(TIPO_COLORS);
+
+  DATA.porTipo.forEach((item, i) => {
+    const pct = DATA.total > 0 ? Math.round((item.total / DATA.total) * 100) : 0;
+    const color = colors[i % colors.length];
+    const div = document.createElement('div');
+    div.className = 'tb-progress-item';
+    div.innerHTML = `
+      <div class="tb-progress-header">
+        <span class="tb-progress-name">${item.tipo}</span>
+        <span class="tb-progress-count">${item.total} <span style="color:#475569;font-weight:400;">(${pct}%)</span></span>
+      </div>
+      <div class="tb-progress-track">
+        <div class="tb-progress-bar" style="width:0%;background:${color};" data-width="${pct}%"></div>
+      </div>
+    `;
+    container.appendChild(div);
+  });
+
+  // Animación de entrada
+  setTimeout(() => {
+    document.querySelectorAll('.tb-progress-bar').forEach(bar => {
+      bar.style.width = bar.dataset.width;
+    });
+  }, 200);
+})();
+</script>
+
+{% endblock %}

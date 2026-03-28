@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>TuBarrio  — Descubre lo que hay en tu barrio</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+
+  <!-- Tu CSS estático -->
+  <link rel="stylesheet" href="{% static 'css/tubarrio.css' %}"/>
+</head>
+<body>
+
+<div id="map"></div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">Tu<span>Barrio</span></div>
+
+  <div class="search-wrap" id="searchWrap">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A7768" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    <input id="searchInput" type="text" placeholder="Buscar negocio o dirección…" oninput="onSearch(this)"/>
+    <button class="search-clear" onclick="clearSearch()" title="Limpiar">✕</button>
+  </div>
+
+  <button class="btn-gps" id="gpsBtn" onclick="useGPS()">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
+    <span>Mi ubicación</span>
+  </button>
+
+  <a href="{% url 'ingresa_tu_negocio' %}" class="btn-reg">+ Registrar</a>
+</div>
+
+<!-- FILTROS -->
+<div class="filters" id="filtersBar">
+  <button class="fcat on" onclick="filterBy(this,'all')">🗂 Todos</button>
+  <button class="fcat" onclick="filterBy(this,'comida')"><span class="dot-cat" style="background:#F5A623"></span>Comida</button>
+  <button class="fcat" onclick="filterBy(this,'mini_market')"><span class="dot-cat" style="background:#5F8C68"></span>Almacenes</button>
+  <button class="fcat" onclick="filterBy(this,'peluqueria')"><span class="dot-cat" style="background:#E05C8A"></span>Belleza</button>
+  <button class="fcat" onclick="filterBy(this,'otros')"><span class="dot-cat" style="background:#4A90D9"></span>Otros</button>
+</div>
+
+<!-- PANEL -->
+<div class="panel hidden" id="panel">
+  <div class="panel-head">
+    <h3>Negocios</h3>
+    <div class="panel-controls">
+      <span class="count-badge" id="countBadge">0</span>
+      <button class="btn-collapse" onclick="togglePanel()" aria-label="Cerrar lista">✕</button>
+    </div>
+  </div>
+  <div class="panel-sort">
+    <button class="sort-btn on" onclick="setSort(this,'default')">Recientes</button>
+    <button class="sort-btn" onclick="setSort(this,'az')">A–Z</button>
+    <button class="sort-btn" onclick="setSort(this,'cercano')">Cerca mío</button>
+  </div>
+  <div class="panel-list" id="panelList"></div>
+</div>
+<button class="btn-open-panel" id="openPanelBtn" onclick="togglePanel()" aria-label="Ver lista">≡ Lista</button>
+
+<!-- ZONA INFO -->
+<div class="zone-info">📍 <strong id="zoneCount">0</strong> negocios</div>
+
+<!-- LIVE BADGE -->
+<div class="live-badge" id="liveBadge">
+  <div class="live-dot"></div>
+  <span>En vivo · <strong id="liveCount">0</strong> negocios</span>
+</div>
+
+<!-- MODAL -->
+<div class="modal-ov" id="detailModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="m-banner" id="mBanner"></div>
+    <div class="m-body">
+      <div class="m-name" id="mName"></div>
+      <div class="m-catl" id="mCat"></div>
+      <div class="m-info" id="mInfo"></div>
+      <div class="m-actions" id="mActions"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<!-- ══════════════════════════════════════════
+     DATOS DJANGO — inyectados inline para que
+     el JS externo pueda leerlos como variables
+     globales. Esto es necesario porque los datos
+     vienen del servidor y no pueden ir en un
+     archivo .js estático.
+══════════════════════════════════════════ -->
+<script>
+  // URL para el botón "Registrar" usado en showEmpty()
+  const REGISTER_URL = "{% url 'ingresa_tu_negocio' %}";
+
+  // Array de negocios desde Django
+  var NEGOCIOS = [
+    {% for n in negocios %}
+    {
+      id:          {{n.id}},
+      nombre:      "{{n.nombre|escapejs}}",
+      cat:         "{{n.tipo|escapejs}}",
+      dir:         "{{n.direccion|escapejs}}",
+      dias:        "{{n.dias_atencion|escapejs}}",
+      descripcion: "{{n.descripcion|default_if_none:''|escapejs}}",
+      instagram:   "{{n.instagram|default_if_none:''|escapejs}}",
+      facebook:    "{{n.facebook|default_if_none:''|escapejs}}",
+      whatsapp:    "{{n.whatsapp|default_if_none:''|escapejs}}",
+      wsp_publico: "{{n.wsp_publico|default_if_none:'no'|escapejs}}",
+      lat:  {% if n.latitud %}{{n.latitud}}{% else %}null{% endif %},
+      lng:  {% if n.longitud %}{{n.longitud}}{% else %}null{% endif %},
+    }{% if not forloop.last %},{% endif %}
+    {% endfor %}
+  ];
+</script>
+
+<!-- Tu JS estático — debe ir DESPUÉS del bloque de datos Django -->
+<script src="{% static 'js/tubarrio.js' %}"></script>
+
+</body>
+</html>
