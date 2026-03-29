@@ -17,65 +17,76 @@
       --shadow-sm:0 2px 12px rgba(36,26,16,.08);
       --shadow-md:0 8px 32px rgba(36,26,16,.12);
       --shadow-lg:0 20px 60px rgba(36,26,16,.18);
+      --nav-h: 56px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth}
-    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--bark);min-height:100vh}
+    html{scroll-behavior:smooth;overflow-x:hidden}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--bark);min-height:100vh;overflow-x:hidden}
 
     /* ── NAV ── */
     nav{
       position:sticky;top:0;z-index:100;
       display:flex;align-items:center;justify-content:space-between;
-      padding:.85rem 2rem;
-      background:rgba(246,241,233,.95);backdrop-filter:blur(16px);
+      padding:0 1.5rem;
+      height:var(--nav-h);
+      background:rgba(246,241,233,.97);backdrop-filter:blur(16px);
       border-bottom:1px solid rgba(36,26,16,.07);
     }
-    .logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.35rem;color:var(--bark);letter-spacing:-.03em;display:flex;align-items:center;gap:.3rem;text-decoration:none}
+    .logo{font-family:'Fraunces',serif;font-weight:900;font-size:1.25rem;color:var(--bark);letter-spacing:-.03em;display:flex;align-items:center;gap:.3rem;text-decoration:none}
     .logo span{color:var(--terra)}
-    .nav-back{display:flex;align-items:center;gap:.4rem;font-size:.83rem;font-weight:500;color:var(--dust);text-decoration:none;transition:color .2s;padding:.4rem .7rem;border-radius:10px;transition:all .2s}
+    .nav-back{display:flex;align-items:center;gap:.4rem;font-size:.83rem;font-weight:500;color:var(--dust);text-decoration:none;padding:.4rem .7rem;border-radius:10px;transition:all .2s}
     .nav-back:hover{color:var(--bark);background:var(--warm)}
 
     /* ── LAYOUT ── */
-    .page-wrap{display:grid;grid-template-columns:1fr 1.1fr;min-height:calc(100vh - 58px)}
+    .page-wrap{
+      display:grid;
+      grid-template-columns:minmax(0,360px) minmax(0,1fr);
+      min-height:calc(100vh - var(--nav-h));
+    }
 
     /* ── LEFT PANEL ── */
     .left-panel{
-      background:var(--bark);padding:4rem 3rem;
+      background:var(--bark);
+      padding:3rem 2.5rem;
       display:flex;flex-direction:column;justify-content:center;
-      position:sticky;top:58px;height:calc(100vh - 58px);overflow:hidden;
+      position:sticky;top:var(--nav-h);
+      height:calc(100vh - var(--nav-h));
+      overflow:hidden;
+      min-width:0;
     }
-    .left-panel::before{content:'';position:absolute;width:500px;height:500px;border-radius:50%;background:rgba(194,82,42,.1);top:-160px;right:-140px}
-    .left-panel::after{content:'';position:absolute;width:380px;height:380px;border-radius:50%;background:rgba(212,165,64,.08);bottom:-100px;left:-90px}
+    .left-panel::before{content:'';position:absolute;width:400px;height:400px;border-radius:50%;background:rgba(194,82,42,.1);top:-130px;right:-120px;pointer-events:none}
+    .left-panel::after{content:'';position:absolute;width:300px;height:300px;border-radius:50%;background:rgba(212,165,64,.08);bottom:-80px;left:-70px;pointer-events:none}
     .left-content{position:relative;z-index:1}
     .left-chip{
       display:inline-flex;align-items:center;gap:.4rem;
       background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);
-      padding:.3rem .9rem;border-radius:100px;
-      font-size:.72rem;font-weight:600;color:var(--gold);
-      letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.5rem;
+      padding:.3rem .85rem;border-radius:100px;
+      font-size:.7rem;font-weight:600;color:var(--gold);
+      letter-spacing:.1em;text-transform:uppercase;margin-bottom:1.4rem;
     }
     .left-panel h1{
-      font-family:'Fraunces',serif;font-size:clamp(1.9rem,2.8vw,2.9rem);
-      font-weight:900;line-height:1.06;letter-spacing:-.04em;color:var(--cream);margin-bottom:1.1rem;
+      font-family:'Fraunces',serif;font-size:clamp(1.7rem,2.5vw,2.5rem);
+      font-weight:900;line-height:1.08;letter-spacing:-.04em;color:var(--cream);margin-bottom:1rem;
     }
     .left-panel h1 em{font-style:italic;color:var(--gold)}
-    .left-panel p{color:rgba(246,241,233,.55);font-size:.95rem;line-height:1.75;max-width:360px;margin-bottom:2.5rem}
-    .benefits{display:flex;flex-direction:column;gap:.85rem}
-    .benefit{display:flex;align-items:flex-start;gap:.8rem;opacity:0;animation:fadeIn .5s ease both}
+    .left-panel p{color:rgba(246,241,233,.55);font-size:.88rem;line-height:1.75;max-width:340px;margin-bottom:2rem}
+    .benefits{display:flex;flex-direction:column;gap:.75rem}
+    .benefit{display:flex;align-items:flex-start;gap:.75rem;opacity:0;animation:fadeIn .5s ease both}
     @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
     .b-ico{
-      width:38px;height:38px;flex-shrink:0;
+      width:36px;height:36px;flex-shrink:0;
       background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.1);
-      border-radius:11px;display:grid;place-items:center;font-size:1.05rem;
+      border-radius:10px;display:grid;place-items:center;font-size:1rem;
     }
-    .b-text strong{display:block;font-size:.88rem;color:var(--cream);margin-bottom:.1rem}
-    .b-text span{font-size:.8rem;color:rgba(246,241,233,.45);line-height:1.5}
+    .b-text strong{display:block;font-size:.84rem;color:var(--cream);margin-bottom:.1rem}
+    .b-text span{font-size:.76rem;color:rgba(246,241,233,.45);line-height:1.5}
 
-    .step-indicator{display:flex;align-items:center;gap:.4rem;margin-top:2.2rem;padding-top:1.8rem;border-top:1px solid rgba(255,255,255,.08)}
-    .si-item{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+    /* Step indicator */
+    .step-indicator{display:flex;align-items:center;gap:.35rem;margin-top:2rem;padding-top:1.6rem;border-top:1px solid rgba(255,255,255,.08)}
+    .si-item{display:flex;flex-direction:column;align-items:center;gap:.25rem}
     .si-dot{
-      width:28px;height:28px;border-radius:50%;display:grid;place-items:center;
-      font-size:.7rem;font-weight:700;
+      width:26px;height:26px;border-radius:50%;display:grid;place-items:center;
+      font-size:.68rem;font-weight:700;
       background:rgba(255,255,255,.07);color:rgba(246,241,233,.35);
       border:1.5px solid rgba(255,255,255,.1);transition:all .35s cubic-bezier(.34,1.56,.64,1);
     }
@@ -83,29 +94,38 @@
     .si-dot.active{background:var(--gold);color:var(--bark);border-color:var(--gold);transform:scale(1.18)}
     .si-line{flex:1;height:1.5px;background:rgba(255,255,255,.1);transition:background .4s}
     .si-line.done{background:var(--sage)}
-    .si-label{font-size:.66rem;color:rgba(246,241,233,.4);letter-spacing:.03em}
+    .si-label{font-size:.63rem;color:rgba(246,241,233,.4);letter-spacing:.03em}
 
     /* ── RIGHT PANEL ── */
-    .right-panel{padding:3rem 3rem 2.5rem;overflow-y:auto;background:var(--cream)}
+    .right-panel{
+      padding:2.5rem 3rem 3rem;
+      overflow-y:auto;
+      background:var(--cream);
+      min-width:0;
+      overflow-x:hidden;
+    }
     .step-form{display:none;animation:stepIn .35s ease both}
     .step-form.active{display:block}
     @keyframes stepIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-    .progress-wrap{height:3px;background:rgba(36,26,16,.07);border-radius:100px;margin-bottom:2.2rem;overflow:hidden}
+    .progress-wrap{height:3px;background:rgba(36,26,16,.07);border-radius:100px;margin-bottom:2rem;overflow:hidden}
     .progress-bar{height:100%;background:var(--terra);border-radius:100px;transition:width .5s cubic-bezier(.4,0,.2,1)}
 
-    .form-title{font-family:'Fraunces',serif;font-size:1.65rem;font-weight:900;letter-spacing:-.03em;margin-bottom:.3rem}
-    .form-sub{font-size:.87rem;color:var(--dust);margin-bottom:2rem;line-height:1.65}
+    .form-title{font-family:'Fraunces',serif;font-size:1.5rem;font-weight:900;letter-spacing:-.03em;margin-bottom:.3rem}
+    .form-sub{font-size:.85rem;color:var(--dust);margin-bottom:1.8rem;line-height:1.65}
+
+    /* Limit form width for readability on wide screens */
+    .form-inner{max-width:520px}
 
     /* ── CAMPOS ── */
-    .field{margin-bottom:1.2rem}
+    .field{margin-bottom:1.1rem}
     .field label{
       display:flex;align-items:center;gap:.3rem;
-      font-size:.79rem;font-weight:600;margin-bottom:.4rem;color:var(--bark);
+      font-size:.78rem;font-weight:600;margin-bottom:.4rem;color:var(--bark);
     }
     .req{color:var(--terra);font-size:.88rem}
     .field input,.field select,.field textarea{
-      width:100%;padding:.72rem 1rem;border-radius:12px;
+      width:100%;padding:.7rem 1rem;border-radius:12px;
       border:1.5px solid rgba(36,26,16,.12);background:var(--card);
       font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--bark);
       outline:none;transition:border-color .2s,box-shadow .2s;
@@ -118,31 +138,26 @@
     .field.has-err .err-msg{display:flex}
     .field textarea{resize:vertical;min-height:85px;line-height:1.6}
     .field .hint{font-size:.73rem;color:var(--dust);margin-top:.28rem}
-    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:.9rem}
+    .field-row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
 
     /* ── CATEGORÍAS ── */
-    .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.65rem;margin-bottom:1.2rem}
+    .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.6rem;margin-bottom:1rem}
     .cat-opt{
-      border:1.5px solid rgba(36,26,16,.1);border-radius:14px;
-      padding:.9rem .7rem;text-align:center;cursor:pointer;
+      border:1.5px solid rgba(36,26,16,.1);border-radius:13px;
+      padding:.85rem .6rem;text-align:center;cursor:pointer;
       transition:all .2s;background:var(--card);position:relative;overflow:hidden;
-    }
-    .cat-opt::after{
-      content:'';position:absolute;inset:0;border-radius:13px;
-      background:var(--terra);opacity:0;transition:opacity .2s;
     }
     .cat-opt:hover{border-color:rgba(194,82,42,.35);transform:translateY(-1px);box-shadow:0 4px 16px rgba(194,82,42,.1)}
     .cat-opt.selected{border-color:var(--terra);background:#FFF2EE;box-shadow:0 0 0 3px rgba(194,82,42,.12)}
-    .cat-opt.selected::after{opacity:0}
-    .co-ico{font-size:1.55rem;margin-bottom:.35rem;position:relative;z-index:1}
-    .co-name{font-size:.76rem;font-weight:700;color:var(--bark);position:relative;z-index:1}
-    .co-desc{font-size:.65rem;color:var(--dust);margin-top:.08rem;position:relative;z-index:1}
+    .co-ico{font-size:1.45rem;margin-bottom:.3rem;position:relative;z-index:1}
+    .co-name{font-size:.73rem;font-weight:700;color:var(--bark);position:relative;z-index:1}
+    .co-desc{font-size:.62rem;color:var(--dust);margin-top:.06rem;position:relative;z-index:1}
 
     /* ── DÍAS ── */
-    .days-grid{display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.4rem}
+    .days-grid{display:flex;gap:.35rem;flex-wrap:wrap;margin-bottom:.4rem}
     .day-btn{
-      width:42px;height:42px;border-radius:11px;border:1.5px solid rgba(36,26,16,.12);
-      background:var(--card);cursor:pointer;font-size:.78rem;font-weight:600;
+      width:40px;height:40px;border-radius:10px;border:1.5px solid rgba(36,26,16,.12);
+      background:var(--card);cursor:pointer;font-size:.75rem;font-weight:600;
       color:var(--dust);transition:all .18s;
     }
     .day-btn:hover{border-color:var(--terra);color:var(--terra)}
@@ -156,7 +171,7 @@
       transition:border-color .2s,box-shadow .2s;
     }
     .red-field:focus-within{border-color:var(--terra);box-shadow:0 0 0 3px rgba(194,82,42,.1)}
-    .red-icon{font-size:1.05rem;flex-shrink:0}
+    .red-icon{font-size:1rem;flex-shrink:0}
     .red-field input{border:none;background:transparent;outline:none;font-family:'DM Sans',sans-serif;font-size:.88rem;color:var(--bark);width:100%}
     .red-field input::placeholder{color:var(--dust)}
     .public-hint{
@@ -191,7 +206,7 @@
     /* ── GPS BOTÓN ── */
     .btn-gps-loc{
       display:flex;align-items:center;justify-content:center;gap:.5rem;
-      width:100%;padding:.78rem;
+      width:100%;padding:.75rem;
       background:var(--bark);color:var(--cream);
       border:none;border-radius:12px;cursor:pointer;
       font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:600;
@@ -229,7 +244,7 @@
       background:var(--terra);color:#fff;border:none;border-radius:8px;
       padding:.22rem .6rem;font-size:.7rem;font-weight:600;cursor:pointer;flex-shrink:0;
     }
-    #miniMap{height:190px;width:100%;display:none}
+    #miniMap{height:180px;width:100%;display:none}
     #miniMap.visible{display:block}
     .map-hint{
       position:absolute;bottom:8px;left:50%;transform:translateX(-50%);
@@ -243,11 +258,11 @@
       background:var(--card);border:1px solid rgba(36,26,16,.08);
       border-radius:18px;overflow:hidden;box-shadow:var(--shadow-md);margin-bottom:1.8rem;
     }
-    .pc-head{height:90px;display:flex;align-items:center;justify-content:center;font-size:3rem}
-    .pc-body{padding:1.1rem 1.2rem 1.2rem}
-    .pc-name{font-family:'Fraunces',serif;font-weight:700;font-size:1.05rem}
-    .pc-cat{font-size:.71rem;color:var(--terra);font-weight:600;margin-bottom:.7rem;text-transform:uppercase;letter-spacing:.05em}
-    .pc-info{display:flex;flex-direction:column;gap:.3rem}
+    .pc-head{height:88px;display:flex;align-items:center;justify-content:center;font-size:2.8rem}
+    .pc-body{padding:1rem 1.2rem 1.2rem}
+    .pc-name{font-family:'Fraunces',serif;font-weight:700;font-size:1rem}
+    .pc-cat{font-size:.7rem;color:var(--terra);font-weight:600;margin-bottom:.65rem;text-transform:uppercase;letter-spacing:.05em}
+    .pc-info{display:flex;flex-direction:column;gap:.28rem}
     .pc-row{display:flex;align-items:center;gap:.4rem;font-size:.79rem;color:var(--dust)}
     .pc-row svg{opacity:.45;flex-shrink:0}
     .pub-tag{
@@ -261,7 +276,7 @@
     /* ── PREVIEW FLOTANTE ── */
     .preview-float{
       position:fixed;bottom:1.5rem;right:1.5rem;
-      width:270px;background:var(--card);
+      width:260px;background:var(--card);
       border:1px solid rgba(36,26,16,.1);border-radius:18px;
       box-shadow:var(--shadow-lg);overflow:hidden;z-index:300;
       transform:translateY(0) scale(1);
@@ -270,42 +285,42 @@
     }
     .preview-float.hidden{transform:translateY(120%) scale(.95);opacity:0;pointer-events:none}
     .pf-head{
-      height:68px;display:flex;align-items:center;justify-content:center;
-      font-size:2rem;position:relative;
+      height:64px;display:flex;align-items:center;justify-content:center;
+      font-size:1.9rem;position:relative;
     }
     .pf-live-badge{
-      position:absolute;top:8px;right:9px;
+      position:absolute;top:7px;right:8px;
       background:var(--terra);color:#fff;
-      font-size:.6rem;font-weight:700;letter-spacing:.07em;
-      padding:.16rem .5rem;border-radius:100px;
-      display:flex;align-items:center;gap:.28rem;
+      font-size:.58rem;font-weight:700;letter-spacing:.07em;
+      padding:.14rem .48rem;border-radius:100px;
+      display:flex;align-items:center;gap:.26rem;
     }
     .pf-live-dot{width:5px;height:5px;border-radius:50%;background:#fff;animation:livePulse 1.4s infinite}
     @keyframes livePulse{0%,100%{opacity:1}50%{opacity:.25}}
-    .pf-body{padding:.8rem .95rem .95rem}
-    .pf-name{font-family:'Fraunces',serif;font-weight:700;font-size:.92rem;margin-bottom:.12rem}
-    .pf-cat{font-size:.68rem;color:var(--terra);font-weight:600;margin-bottom:.55rem}
-    .pf-info{display:flex;flex-direction:column;gap:.2rem}
-    .pf-row{display:flex;align-items:center;gap:.32rem;font-size:.72rem;color:var(--dust)}
+    .pf-body{padding:.75rem .9rem .9rem}
+    .pf-name{font-family:'Fraunces',serif;font-weight:700;font-size:.88rem;margin-bottom:.1rem}
+    .pf-cat{font-size:.65rem;color:var(--terra);font-weight:600;margin-bottom:.5rem}
+    .pf-info{display:flex;flex-direction:column;gap:.18rem}
+    .pf-row{display:flex;align-items:center;gap:.3rem;font-size:.7rem;color:var(--dust)}
     .pf-row svg{opacity:.45;flex-shrink:0}
     .pf-toggle{
-      position:absolute;top:8px;left:9px;
+      position:absolute;top:7px;left:8px;
       background:rgba(36,26,16,.5);color:#fff;
-      border:none;border-radius:8px;font-size:.62rem;font-weight:600;
-      padding:.16rem .5rem;cursor:pointer;backdrop-filter:blur(4px);transition:background .15s;
+      border:none;border-radius:8px;font-size:.6rem;font-weight:600;
+      padding:.14rem .48rem;cursor:pointer;backdrop-filter:blur(4px);transition:background .15s;
     }
     .pf-toggle:hover{background:rgba(36,26,16,.75)}
 
     /* ── BOTONES ── */
     .btn-next{
-      width:100%;padding:.9rem;
+      width:100%;padding:.85rem;
       background:var(--terra);color:#fff;
       border:none;border-radius:14px;
-      font-family:'DM Sans',sans-serif;font-size:.95rem;font-weight:600;
+      font-family:'DM Sans',sans-serif;font-size:.92rem;font-weight:600;
       cursor:pointer;box-shadow:0 4px 20px rgba(194,82,42,.3);
       transition:transform .15s,box-shadow .15s,background .2s;
       display:flex;align-items:center;justify-content:center;gap:.5rem;
-      margin-top:.5rem;position:relative;z-index:1;
+      margin-top:.5rem;
     }
     .btn-next:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(194,82,42,.4)}
     .btn-next:active{transform:translateY(0)}
@@ -314,16 +329,16 @@
     .btn-next.green:hover{box-shadow:0 8px 28px rgba(95,140,104,.4)}
 
     .btn-back{
-      width:100%;padding:.8rem;
+      width:100%;padding:.78rem;
       background:transparent;color:var(--dust);
       border:1.5px solid rgba(36,26,16,.12);border-radius:14px;
-      font-family:'DM Sans',sans-serif;font-size:.88rem;font-weight:500;
-      cursor:pointer;transition:all .2s;margin-top:.5rem;
+      font-family:'DM Sans',sans-serif;font-size:.86rem;font-weight:500;
+      cursor:pointer;transition:all .2s;margin-top:.45rem;
     }
     .btn-back:hover{border-color:var(--bark);color:var(--bark);background:var(--warm)}
 
     .spinner{
-      width:17px;height:17px;border-radius:50%;
+      width:16px;height:16px;border-radius:50%;
       border:2.5px solid rgba(255,255,255,.3);border-top-color:#fff;
       animation:spinAnim .7s linear infinite;display:inline-block;
     }
@@ -331,8 +346,8 @@
 
     .error-banner{
       background:#FFF0EF;border:1.5px solid var(--err);
-      border-radius:12px;padding:.78rem 1rem;font-size:.83rem;
-      color:var(--err);margin-bottom:1.1rem;display:none;align-items:center;gap:.55rem;
+      border-radius:12px;padding:.75rem 1rem;font-size:.83rem;
+      color:var(--err);margin-bottom:1rem;display:none;align-items:center;gap:.55rem;
     }
     .error-banner.show{display:flex}
 
@@ -340,54 +355,106 @@
     .success-screen{display:none;text-align:center;padding:2rem 0;animation:stepIn .5s ease both}
     .success-screen.active{display:block}
     .success-ico{
-      width:86px;height:86px;border-radius:50%;
+      width:82px;height:82px;border-radius:50%;
       background:linear-gradient(135deg,#D5E8D4,#A2D09E);
-      display:grid;place-items:center;font-size:2.6rem;
-      margin:0 auto 1.4rem;animation:popIn .55s .1s cubic-bezier(.34,1.56,.64,1) both;
+      display:grid;place-items:center;font-size:2.4rem;
+      margin:0 auto 1.3rem;animation:popIn .55s .1s cubic-bezier(.34,1.56,.64,1) both;
     }
     @keyframes popIn{from{transform:scale(.4);opacity:0}to{transform:scale(1);opacity:1}}
-    .success-screen h2{font-family:'Fraunces',serif;font-size:2rem;font-weight:900;margin-bottom:.6rem}
-    .success-screen p{color:var(--dust);font-size:.93rem;line-height:1.72;max-width:360px;margin:0 auto 2rem}
+    .success-screen h2{font-family:'Fraunces',serif;font-size:1.9rem;font-weight:900;margin-bottom:.55rem}
+    .success-screen p{color:var(--dust);font-size:.9rem;line-height:1.72;max-width:380px;margin:0 auto 1.8rem}
     .steps-list{
-      display:flex;flex-direction:column;gap:.65rem;
-      background:var(--card);border-radius:16px;padding:1.2rem;
-      margin-bottom:2rem;border:1px solid rgba(36,26,16,.07);text-align:left;
+      display:flex;flex-direction:column;gap:.6rem;
+      background:var(--card);border-radius:16px;padding:1.1rem;
+      margin-bottom:1.8rem;border:1px solid rgba(36,26,16,.07);text-align:left;
     }
-    .step-item{display:flex;align-items:center;gap:.8rem;font-size:.86rem;animation:fadeIn .4s ease both}
+    .step-item{display:flex;align-items:center;gap:.75rem;font-size:.84rem;animation:fadeIn .4s ease both}
     .step-item .si{
-      width:30px;height:30px;border-radius:9px;background:var(--warm);
-      display:grid;place-items:center;font-size:.95rem;flex-shrink:0;
+      width:28px;height:28px;border-radius:9px;background:var(--warm);
+      display:grid;place-items:center;font-size:.9rem;flex-shrink:0;
     }
 
     /* ── TOAST ── */
     .toast-reg{
       position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(20px);
       background:var(--bark);color:var(--cream);
-      padding:.62rem 1.3rem;border-radius:100px;font-size:.82rem;font-weight:500;
+      padding:.58rem 1.2rem;border-radius:100px;font-size:.81rem;font-weight:500;
       z-index:9999;opacity:0;transition:all .3s cubic-bezier(.34,1.2,.64,1);
       white-space:nowrap;pointer-events:none;box-shadow:var(--shadow-md);
     }
     .toast-reg.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-    /* ── RESPONSIVE ── */
-    @media(max-width:860px){
-      .page-wrap{grid-template-columns:1fr}
-      .left-panel{position:static;height:auto;padding:2.5rem 2rem}
-      .right-panel{padding:2.2rem 1.6rem 5rem}
-      .field-row{grid-template-columns:1fr}
-      .cat-grid{grid-template-columns:repeat(2,1fr)}
-      .preview-float{width:230px}
+    /* ══════════════════════════════════
+       RESPONSIVE BREAKPOINTS
+    ══════════════════════════════════ */
+
+    /* Tablet landscape: shrink left panel */
+    @media(max-width:1100px){
+      .page-wrap{grid-template-columns:minmax(0,280px) minmax(0,1fr)}
+      .left-panel{padding:2rem 1.5rem}
+      .left-panel h1{font-size:1.5rem}
+      .right-panel{padding:2rem 1.8rem 3rem}
     }
-    @media(max-width:540px){
-      nav{padding:.75rem 1.1rem}
-      .right-panel{padding:2rem 1.1rem 6rem}
+
+    /* Tablet portrait: stack layout */
+    @media(max-width:780px){
+      .page-wrap{
+        grid-template-columns:1fr;
+        grid-template-rows:auto 1fr;
+      }
+      .left-panel{
+        position:static;
+        height:auto;
+        padding:1.8rem 1.5rem;
+      }
+      .left-panel .benefits{display:none}
+      .left-panel p{display:none}
+      .left-panel h1{font-size:1.55rem;margin-bottom:.5rem}
+      .left-chip{margin-bottom:.9rem}
+      .step-indicator{margin-top:1.2rem;padding-top:1rem}
+      .right-panel{padding:1.8rem 1.5rem 5rem}
+      .form-inner{max-width:100%}
+    }
+
+    /* Phone */
+    @media(max-width:560px){
+      nav{padding:0 1rem}
+      .logo{font-size:1.1rem}
+      .left-panel{padding:1.4rem 1rem}
+      .left-panel h1{font-size:1.3rem}
+      .left-chip{font-size:.63rem;padding:.22rem .65rem;margin-bottom:.75rem}
+      .right-panel{padding:1.4rem 1rem 5rem}
+      .progress-wrap{margin-bottom:1.4rem}
+      .form-title{font-size:1.25rem}
+      .form-sub{font-size:.81rem;margin-bottom:1.3rem}
+      .field-row{grid-template-columns:1fr}
+      .cat-grid{grid-template-columns:repeat(2,1fr);gap:.45rem}
+      .co-ico{font-size:1.25rem}
+      .co-name{font-size:.69rem}
+      .co-desc{font-size:.59rem}
+      .days-grid{gap:.28rem}
+      .day-btn{width:37px;height:37px;font-size:.71rem}
+      .horario-wrap{gap:.35rem}
+      .field input,.field select,.field textarea{font-size:.87rem;padding:.63rem .88rem}
+      .btn-next{padding:.8rem;font-size:.88rem}
+      .btn-back{padding:.7rem;font-size:.82rem}
       .preview-float{
-        width:auto;right:.75rem;bottom:.75rem;
-        border-radius:100px;
+        width:auto;right:.75rem;bottom:.75rem;border-radius:100px;
       }
       .pf-body,.pf-toggle,.pf-live-badge{display:none}
       .pf-head{height:44px;width:44px;border-radius:100px;font-size:1.4rem;padding:0}
-      .cat-grid{grid-template-columns:repeat(3,1fr)}
+      .success-screen h2{font-size:1.5rem}
+      .success-screen p{font-size:.85rem}
+      #miniMap.visible{height:155px}
+    }
+
+    /* Very small phones */
+    @media(max-width:360px){
+      nav{padding:0 .75rem}
+      .right-panel{padding:1.2rem .75rem 5rem}
+      .left-panel{padding:1.2rem .75rem}
+      .cat-grid{grid-template-columns:repeat(2,1fr)}
+      .si-label{display:none}
     }
   </style>
 </head>
@@ -472,222 +539,230 @@
 
     <!-- ════ PASO 1 ════ -->
     <div class="step-form active" id="step1">
-      <div class="form-title">¿Cuál es tu negocio? 🏪</div>
-      <div class="form-sub">Lo básico primero. Todo esto lo podés editar después.</div>
+      <div class="form-inner">
+        <div class="form-title">¿Cuál es tu negocio? 🏪</div>
+        <div class="form-sub">Lo básico primero. Todo esto lo podés editar después.</div>
 
-      <div class="field" id="f-nombre">
-        <label>Nombre del negocio <span class="req">*</span></label>
-        <input type="text" id="inp-nombre" placeholder="Ej: Panadería Doña Rosa" oninput="updatePreview()" autocomplete="organization"/>
-        <div class="err-msg">⚠ Ingresá el nombre de tu negocio</div>
-      </div>
+        <div class="field" id="f-nombre">
+          <label>Nombre del negocio <span class="req">*</span></label>
+          <input type="text" id="inp-nombre" placeholder="Ej: Panadería Doña Rosa" oninput="updatePreview()" autocomplete="organization"/>
+          <div class="err-msg">⚠ Ingresá el nombre de tu negocio</div>
+        </div>
 
-      <div class="field"><label>Categoría <span class="req">*</span></label></div>
-      <div class="cat-grid" id="catGrid">
-        <div class="cat-opt" onclick="selectCat(this,'comida','🍽')">
-          <div class="co-ico">🍽</div><div class="co-name">Comida</div><div class="co-desc">Cocina, almuerzos</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'comida','🍞')">
-          <div class="co-ico">🍞</div><div class="co-name">Panadería</div><div class="co-desc">Pan, repostería</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'mini_market','🛒')">
-          <div class="co-ico">🛒</div><div class="co-name">Almacén</div><div class="co-desc">Abarrotes, botillería</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'otros','🔧')">
-          <div class="co-ico">🔧</div><div class="co-name">Servicios</div><div class="co-desc">Gasfiter, electricista</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'peluqueria','✂️')">
-          <div class="co-ico">✂️</div><div class="co-name">Belleza</div><div class="co-desc">Peluquería, manicure</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'otros','✨')">
-          <div class="co-ico">✨</div><div class="co-name">Emprendimiento</div><div class="co-desc">Artesanía, otros</div>
-        </div>
-      </div>
-      <div class="field" id="f-cat">
-        <div class="err-msg" style="margin-top:-.6rem;margin-bottom:.8rem">⚠ Seleccioná una categoría</div>
-      </div>
-
-      <div class="field-row">
-        <div class="field" id="f-ciudad">
-          <label>Ciudad <span class="req">*</span></label>
-          <input type="text" id="inp-ciudad" placeholder="Ej: Temuco" oninput="updatePreview();scheduleGeo()" autocomplete="address-level2"/>
-          <div class="err-msg">⚠ Ingresá la ciudad</div>
-        </div>
-        <div class="field">
-          <label>Comuna / Barrio</label>
-          <input type="text" id="inp-comuna" placeholder="Ej: Labranza" oninput="scheduleGeo()" autocomplete="address-level3"/>
-        </div>
-      </div>
-
-      <div class="field" id="f-dir">
-        <label>Dirección <span class="req">*</span></label>
-        <button type="button" class="btn-gps-loc" id="btnGpsLoc" onclick="usarUbicacionActual()">
-          📍 Usar mi ubicación actual
-        </button>
-        <div class="dir-divider">o escribí la dirección</div>
-        <input type="text" id="inp-dir" placeholder="Ej: Calle Los Aromos 312" oninput="updatePreview();scheduleGeo()" autocomplete="street-address"/>
-        <div class="err-msg">⚠ Ingresá la dirección o usá el botón de ubicación</div>
-        <div class="geo-wrap" id="geoWrap">
-          <div class="geo-status" id="geoStatus">
-            <span class="gs-ico">📍</span>
-            <span class="gs-text">Escribí la dirección o usá el botón GPS</span>
+        <div class="field"><label>Categoría <span class="req">*</span></label></div>
+        <div class="cat-grid" id="catGrid">
+          <div class="cat-opt" onclick="selectCat(this,'comida','🍽')">
+            <div class="co-ico">🍽</div><div class="co-name">Comida</div><div class="co-desc">Cocina, almuerzos</div>
           </div>
-          <div style="position:relative">
-            <div id="miniMap"></div>
-            <div class="map-hint" id="mapHint" style="display:none">Arrastrá el pin para ajustar</div>
+          <div class="cat-opt" onclick="selectCat(this,'comida','🍞')">
+            <div class="co-ico">🍞</div><div class="co-name">Panadería</div><div class="co-desc">Pan, repostería</div>
+          </div>
+          <div class="cat-opt" onclick="selectCat(this,'mini_market','🛒')">
+            <div class="co-ico">🛒</div><div class="co-name">Almacén</div><div class="co-desc">Abarrotes, botillería</div>
+          </div>
+          <div class="cat-opt" onclick="selectCat(this,'otros','🔧')">
+            <div class="co-ico">🔧</div><div class="co-name">Servicios</div><div class="co-desc">Gasfiter, electricista</div>
+          </div>
+          <div class="cat-opt" onclick="selectCat(this,'peluqueria','✂️')">
+            <div class="co-ico">✂️</div><div class="co-name">Belleza</div><div class="co-desc">Peluquería, manicure</div>
+          </div>
+          <div class="cat-opt" onclick="selectCat(this,'otros','✨')">
+            <div class="co-ico">✨</div><div class="co-name">Emprendimiento</div><div class="co-desc">Artesanía, otros</div>
           </div>
         </div>
-        <input type="hidden" id="inp-lat"/>
-        <input type="hidden" id="inp-lng"/>
-      </div>
+        <div class="field" id="f-cat">
+          <div class="err-msg" style="margin-top:-.6rem;margin-bottom:.8rem">⚠ Seleccioná una categoría</div>
+        </div>
 
-      <button class="btn-next" onclick="goStep(2)">Continuar → Horario</button>
+        <div class="field-row">
+          <div class="field" id="f-ciudad">
+            <label>Ciudad <span class="req">*</span></label>
+            <input type="text" id="inp-ciudad" placeholder="Ej: Temuco" oninput="updatePreview();scheduleGeo()" autocomplete="address-level2"/>
+            <div class="err-msg">⚠ Ingresá la ciudad</div>
+          </div>
+          <div class="field">
+            <label>Comuna / Barrio</label>
+            <input type="text" id="inp-comuna" placeholder="Ej: Labranza" oninput="scheduleGeo()" autocomplete="address-level3"/>
+          </div>
+        </div>
+
+        <div class="field" id="f-dir">
+          <label>Dirección <span class="req">*</span></label>
+          <button type="button" class="btn-gps-loc" id="btnGpsLoc" onclick="usarUbicacionActual()">
+            📍 Usar mi ubicación actual
+          </button>
+          <div class="dir-divider">o escribí la dirección</div>
+          <input type="text" id="inp-dir" placeholder="Ej: Calle Los Aromos 312" oninput="updatePreview();scheduleGeo()" autocomplete="street-address"/>
+          <div class="err-msg">⚠ Ingresá la dirección o usá el botón de ubicación</div>
+          <div class="geo-wrap" id="geoWrap">
+            <div class="geo-status" id="geoStatus">
+              <span class="gs-ico">📍</span>
+              <span class="gs-text">Escribí la dirección o usá el botón GPS</span>
+            </div>
+            <div style="position:relative">
+              <div id="miniMap"></div>
+              <div class="map-hint" id="mapHint" style="display:none">Arrastrá el pin para ajustar</div>
+            </div>
+          </div>
+          <input type="hidden" id="inp-lat"/>
+          <input type="hidden" id="inp-lng"/>
+        </div>
+
+        <button class="btn-next" onclick="goStep(2)">Continuar → Horario</button>
+      </div>
     </div>
 
     <!-- ════ PASO 2 ════ -->
     <div class="step-form" id="step2">
-      <div class="form-title">¿Cuándo atendís? 🗓️</div>
-      <div class="form-sub">Para que los vecinos sepan cuándo ir a buscarte.</div>
+      <div class="form-inner">
+        <div class="form-title">¿Cuándo atendís? 🗓️</div>
+        <div class="form-sub">Para que los vecinos sepan cuándo ir a buscarte.</div>
 
-      <div class="field">
-        <label>Días de atención</label>
-        <div class="days-grid">
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Lun')">Lun</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Mar')">Mar</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Mié')">Mié</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Jue')">Jue</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Vie')">Vie</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Sáb')">Sáb</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Dom')">Dom</button>
+        <div class="field">
+          <label>Días de atención</label>
+          <div class="days-grid">
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Lun')">Lun</button>
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Mar')">Mar</button>
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Mié')">Mié</button>
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Jue')">Jue</button>
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Vie')">Vie</button>
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Sáb')">Sáb</button>
+            <button type="button" class="day-btn" onclick="toggleDay(this,'Dom')">Dom</button>
+          </div>
+          <div class="hint">Seleccionados: <strong id="daysDisplay">ninguno</strong></div>
         </div>
-        <div class="hint">Seleccionados: <strong id="daysDisplay">ninguno</strong></div>
-      </div>
 
-      <div class="field">
-        <label>Horario de atención</label>
-        <div class="horario-wrap">
-          <input type="time" id="inp-desde" value="08:00" oninput="updatePreview()"/>
-          <span class="horario-sep">hasta</span>
-          <input type="time" id="inp-hasta" value="18:00" oninput="updatePreview()"/>
+        <div class="field">
+          <label>Horario de atención</label>
+          <div class="horario-wrap">
+            <input type="time" id="inp-desde" value="08:00" oninput="updatePreview()"/>
+            <span class="horario-sep">hasta</span>
+            <input type="time" id="inp-hasta" value="18:00" oninput="updatePreview()"/>
+          </div>
         </div>
-      </div>
 
-      <div class="field">
-        <label>¿Atendés a domicilio?</label>
-        <select id="inp-domicilio">
-          <option value="no">No, solo en mi local</option>
-          <option value="si">Sí, voy al domicilio</option>
-          <option value="ambos">Ambas opciones</option>
-        </select>
-      </div>
+        <div class="field">
+          <label>¿Atendés a domicilio?</label>
+          <select id="inp-domicilio">
+            <option value="no">No, solo en mi local</option>
+            <option value="si">Sí, voy al domicilio</option>
+            <option value="ambos">Ambas opciones</option>
+          </select>
+        </div>
 
-      <button class="btn-next" onclick="goStep(3)">Continuar → Contacto</button>
-      <button class="btn-back" onclick="goStep(1)">← Volver</button>
+        <button class="btn-next" onclick="goStep(3)">Continuar → Contacto</button>
+        <button class="btn-back" onclick="goStep(1)">← Volver</button>
+      </div>
     </div>
 
     <!-- ════ PASO 3 ════ -->
     <div class="step-form" id="step3">
-      <div class="form-title">¿Cómo te contactan? 📱</div>
-      <div class="form-sub">Vos decidís qué info es pública. El WhatsApp es solo para que te avisemos cuando estés aprobado.</div>
+      <div class="form-inner">
+        <div class="form-title">¿Cómo te contactan? 📱</div>
+        <div class="form-sub">Vos decidís qué info es pública. El WhatsApp es solo para que te avisemos cuando estés aprobado.</div>
 
-      <div class="visibility-notice">
-        <span style="font-size:1rem;flex-shrink:0">👁</span>
-        <span>Instagram y Facebook <strong>siempre serán públicos</strong> si los completás. Tu WhatsApp solo aparece si lo autorizás abajo.</span>
-      </div>
-
-      <div class="field" id="f-wsp">
-        <label>WhatsApp <span class="req">*</span></label>
-        <div class="red-field">
-          <span class="red-icon">💬</span>
-          <input type="tel" id="inp-wsp" placeholder="+56 9 XXXX XXXX" oninput="updatePreview()" autocomplete="tel"/>
+        <div class="visibility-notice">
+          <span style="font-size:1rem;flex-shrink:0">👁</span>
+          <span>Instagram y Facebook <strong>siempre serán públicos</strong> si los completás. Tu WhatsApp solo aparece si lo autorizás abajo.</span>
         </div>
-        <div class="hint">🔒 Solo para avisarte cuando estés aprobado. No se muestra en el mapa a menos que lo autorices.</div>
-        <label class="privacy-check">
-          <input type="checkbox" id="chk-wsp-pub" onchange="updatePreview()"/>
-          <span>Quiero que mi WhatsApp sea visible para los clientes en el mapa</span>
-        </label>
-        <div class="err-msg">⚠ Ingresá tu WhatsApp para que podamos avisarte</div>
-      </div>
 
-      <div class="field">
-        <label>Instagram <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
-        <div class="red-field">
-          <span class="red-icon">📸</span>
-          <input type="text" id="inp-ig" placeholder="@tu_negocio"/>
+        <div class="field" id="f-wsp">
+          <label>WhatsApp <span class="req">*</span></label>
+          <div class="red-field">
+            <span class="red-icon">💬</span>
+            <input type="tel" id="inp-wsp" placeholder="+56 9 XXXX XXXX" oninput="updatePreview()" autocomplete="tel"/>
+          </div>
+          <div class="hint">🔒 Solo para avisarte cuando estés aprobado. No se muestra en el mapa a menos que lo autorices.</div>
+          <label class="privacy-check">
+            <input type="checkbox" id="chk-wsp-pub" onchange="updatePreview()"/>
+            <span>Quiero que mi WhatsApp sea visible para los clientes en el mapa</span>
+          </label>
+          <div class="err-msg">⚠ Ingresá tu WhatsApp para que podamos avisarte</div>
         </div>
-        <div class="public-hint">Será público en el mapa si lo completás</div>
-      </div>
 
-      <div class="field">
-        <label>Facebook <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
-        <div class="red-field">
-          <span class="red-icon">📘</span>
-          <input type="text" id="inp-fb" placeholder="facebook.com/tu-negocio"/>
+        <div class="field">
+          <label>Instagram <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+          <div class="red-field">
+            <span class="red-icon">📸</span>
+            <input type="text" id="inp-ig" placeholder="@tu_negocio"/>
+          </div>
+          <div class="public-hint">Será público en el mapa si lo completás</div>
         </div>
-        <div class="public-hint">Será público en el mapa si lo completás</div>
-      </div>
 
-      <button class="btn-next" onclick="goStep(4)">Continuar → Confirmar</button>
-      <button class="btn-back" onclick="goStep(2)">← Volver</button>
+        <div class="field">
+          <label>Facebook <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+          <div class="red-field">
+            <span class="red-icon">📘</span>
+            <input type="text" id="inp-fb" placeholder="facebook.com/tu-negocio"/>
+          </div>
+          <div class="public-hint">Será público en el mapa si lo completás</div>
+        </div>
+
+        <button class="btn-next" onclick="goStep(4)">Continuar → Confirmar</button>
+        <button class="btn-back" onclick="goStep(2)">← Volver</button>
+      </div>
     </div>
 
     <!-- ════ PASO 4 ════ -->
     <div class="step-form" id="step4">
-      <div class="form-title">Revisá tu negocio 👀</div>
-      <div class="form-sub">Así va a aparecer en el mapa. Lo que ves aquí es lo que verá la gente.</div>
+      <div class="form-inner">
+        <div class="form-title">Revisá tu negocio 👀</div>
+        <div class="form-sub">Así va a aparecer en el mapa. Lo que ves aquí es lo que verá la gente.</div>
 
-      <div class="preview-card">
-        <div class="pc-head" id="pcHead" style="background:linear-gradient(135deg,#FDEBD0,#F5C99E)">🏪</div>
-        <div class="pc-body">
-          <div class="pc-name" id="pcName">Tu negocio</div>
-          <div class="pc-cat"  id="pcCat">Categoría · Ciudad</div>
-          <div class="pc-info">
-            <div class="pc-row">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span id="pcDir">Dirección</span>
-            </div>
-            <div class="pc-row">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span id="pcDias">Días de atención</span>
-            </div>
-            <div class="pc-row">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span id="pcHora">Horario</span>
-            </div>
-            <div class="pc-row" id="pcWspRow" style="display:none">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span id="pcWsp"></span><span class="pub-tag">✓ público</span>
-            </div>
-            <div class="pc-row" id="pcIgRow" style="display:none">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
-              <span id="pcIg"></span><span class="pub-tag">✓ público</span>
-            </div>
-            <div class="pc-row" id="pcFbRow" style="display:none">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              <span id="pcFb"></span><span class="pub-tag">✓ público</span>
-            </div>
-            <div class="pc-row" id="pcGeoRow" style="display:none">
-              <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-              <span style="color:var(--sage);font-weight:600">📍 Ubicación confirmada en el mapa</span>
+        <div class="preview-card">
+          <div class="pc-head" id="pcHead" style="background:linear-gradient(135deg,#FDEBD0,#F5C99E)">🏪</div>
+          <div class="pc-body">
+            <div class="pc-name" id="pcName">Tu negocio</div>
+            <div class="pc-cat"  id="pcCat">Categoría · Ciudad</div>
+            <div class="pc-info">
+              <div class="pc-row">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <span id="pcDir">Dirección</span>
+              </div>
+              <div class="pc-row">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                <span id="pcDias">Días de atención</span>
+              </div>
+              <div class="pc-row">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span id="pcHora">Horario</span>
+              </div>
+              <div class="pc-row" id="pcWspRow" style="display:none">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+                <span id="pcWsp"></span><span class="pub-tag">✓ público</span>
+              </div>
+              <div class="pc-row" id="pcIgRow" style="display:none">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
+                <span id="pcIg"></span><span class="pub-tag">✓ público</span>
+              </div>
+              <div class="pc-row" id="pcFbRow" style="display:none">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
+                <span id="pcFb"></span><span class="pub-tag">✓ público</span>
+              </div>
+              <div class="pc-row" id="pcGeoRow" style="display:none">
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+                <span style="color:var(--sage);font-weight:600">📍 Ubicación confirmada en el mapa</span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="error-banner" id="errorBanner">
-        ⚠️ <span id="errorMsg">Hubo un problema. Intentá de nuevo.</span>
-      </div>
+        <div class="error-banner" id="errorBanner">
+          ⚠️ <span id="errorMsg">Hubo un problema. Intentá de nuevo.</span>
+        </div>
 
-      <div class="field">
-        <label style="font-weight:400;cursor:pointer;flex-direction:row;align-items:flex-start;gap:.6rem">
-          <input type="checkbox" id="chk-terms" style="width:auto;margin-top:3px;accent-color:var(--terra);flex-shrink:0"/>
-          <span style="font-size:.83rem;color:var(--dust);line-height:1.5">Acepto que TuBarrio publique esta información de mi negocio en la plataforma.</span>
-        </label>
-      </div>
+        <div class="field">
+          <label style="font-weight:400;cursor:pointer;flex-direction:row;align-items:flex-start;gap:.6rem">
+            <input type="checkbox" id="chk-terms" style="width:auto;margin-top:3px;accent-color:var(--terra);flex-shrink:0"/>
+            <span style="font-size:.83rem;color:var(--dust);line-height:1.5">Acepto que TuBarrio publique esta información de mi negocio en la plataforma.</span>
+          </label>
+        </div>
 
-      <button class="btn-next green" id="submitBtn" onclick="submitForm()">
-        🚀 Registrar mi negocio gratis
-      </button>
-      <button class="btn-back" onclick="goStep(3)">← Volver a editar</button>
+        <button class="btn-next green" id="submitBtn" onclick="submitForm()">
+          🚀 Registrar mi negocio gratis
+        </button>
+        <button class="btn-back" onclick="goStep(3)">← Volver a editar</button>
+      </div>
     </div>
 
     <!-- SUCCESS -->
@@ -884,6 +959,8 @@ function goStep(n) {
     if (sl) sl.className = 'si-line'+(i<n?' done':'');
   }
   document.getElementById('rightPanel').scrollTo({top:0,behavior:'smooth'});
+  // scroll to top on mobile (stacked layout)
+  window.scrollTo({top:0,behavior:'smooth'});
   updatePreview();
 
   const pf = document.getElementById('previewFloat');
@@ -1067,6 +1144,7 @@ async function submitForm() {
       document.getElementById('successScreen').classList.add('active');
       document.getElementById('previewFloat').classList.add('hidden');
       document.getElementById('rightPanel').scrollTo({top:0,behavior:'smooth'});
+      window.scrollTo({top:0,behavior:'smooth'});
     } else {
       document.getElementById('errorMsg').textContent = 'Error del servidor ('+res.status+'). Intentá de nuevo.';
       document.getElementById('errorBanner').classList.add('show');

@@ -84,7 +84,9 @@ WSGI_APPLICATION = 'projecto.wsgi.application'
 
 
 DATABASES = {
-    'default': dj_database_url.config()
+    'default': dj_database_url.parse(
+        'postgresql://tubarrio_db_user:u6u8uRFVmbjqP6jx1fcbv2yf28pp5cON@dpg-d74ni2haae7s73bkplcg-a.oregon-postgres.render.com/tubarrio_db'
+    )
 }
 
 DATABASES['default']['sslmode'] = 'require'
