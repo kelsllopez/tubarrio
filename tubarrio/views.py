@@ -27,6 +27,10 @@ def geocode(direccion, comuna='', ciudad='Chile'):
     return None, None
 
 
+# Tipos válidos según TIPO_CHOICES del modelo
+TIPOS_VALIDOS = {'mini_market', 'belleza', 'comida', 'panaderia', 'servicios', 'emprendimiento'}
+
+
 # ── Vista principal — mapa ────────────────────────────────────────────────────
 def index(request):
     qs = Negocio.objects.filter(estado='aprobado').order_by('-fecha_creacion')
@@ -82,6 +86,7 @@ def ingresa_tu_negocio(request):
         comuna    = request.POST.get('comuna',    '').strip()
         ciudad    = request.POST.get('ciudad',    'Chile').strip()
 
+        # Coordenadas enviadas desde el formulario (GPS o geocoder del front)
         lat_raw = request.POST.get('latitud',  '').strip()
         lng_raw = request.POST.get('longitud', '').strip()
 
@@ -91,19 +96,30 @@ def ingresa_tu_negocio(request):
         except ValueError:
             latitud = longitud = None
 
+        # Si no vienen coordenadas del front, geocodificamos en el servidor
         if latitud is None or longitud is None:
             latitud, longitud = geocode(direccion, comuna, ciudad)
 
+        # Validar que el tipo recibido sea uno de los valores permitidos
+        tipo_recibido = request.POST.get('tipo', '').strip()
+        tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
+
+        # instagram y facebook vienen como texto libre del form,
+        # pero el modelo los guarda como URLField (blank/null=True).
+        # Limpiamos strings vacíos → None para no violar la validación.
+        instagram_raw = request.POST.get('instagram', '').strip() or None
+        facebook_raw  = request.POST.get('facebook',  '').strip() or None
+
         Negocio.objects.create(
             nombre        = request.POST.get('nombre',        '').strip(),
-            tipo          = request.POST.get('tipo',          'otros'),
+            tipo          = tipo,
             direccion     = direccion,
             dias_atencion = request.POST.get('dias_atencion', '').strip(),
-            whatsapp      = request.POST.get('whatsapp',     '').strip() or None,
-            instagram     = request.POST.get('instagram',    '').strip() or None,
-            facebook      = request.POST.get('facebook',     '').strip() or None,
+            whatsapp      = request.POST.get('whatsapp',      '').strip() or None,
+            instagram     = instagram_raw,
+            facebook      = facebook_raw,
             comuna        = comuna,
-            ciudad        = ciudad,
+            ciudad        = ciudad or 'Chile',
             latitud       = latitud,
             longitud      = longitud,
             estado        = 'pendiente',

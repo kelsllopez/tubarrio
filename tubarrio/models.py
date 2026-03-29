@@ -5,9 +5,11 @@ class Negocio(models.Model):
 
     TIPO_CHOICES = [
         ('mini_market', 'Mini Market'),
-        ('peluqueria', 'Peluquería'),
+        ('belleza', 'belleza'),
         ('comida', 'Comida'),
-        ('otros', 'Otros'),
+        ('panaderia', 'panaderia'),
+        ('servicios', 'servicios'),
+        ('emprendimiento', 'emprendimiento'),
     ]
 
     ESTADO_CHOICES = [

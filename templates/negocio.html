@@ -3,6 +3,7 @@
 <html lang="es-CL">
 <head>
   <meta charset="UTF-8"/>
+  <meta name="color-scheme" content="light only">
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="csrf-token" content="{{ csrf_token }}">
   <title>TuBarrio 🇨🇱 — Registrar mi negocio</title>
@@ -20,8 +21,8 @@
       --nav-h: 56px;
     }
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    html{scroll-behavior:smooth;overflow-x:hidden}
-    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--bark);min-height:100vh;overflow-x:hidden}
+    html{scroll-behavior:smooth;overflow-x:hidden;color-scheme:light}
+    body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--bark);min-height:100vh;overflow-x:hidden;color-scheme:light}
 
     /* ── NAV ── */
     nav{
@@ -126,6 +127,9 @@
       border:1.5px solid rgba(36,26,16,.12);background:var(--card);
       font-family:'DM Sans',sans-serif;font-size:.9rem;color:var(--bark);
       outline:none;transition:border-color .2s,box-shadow .2s;
+      color-scheme:light;
+      -webkit-appearance:none;
+      appearance:none;
     }
     .field input:focus,.field select:focus,.field textarea:focus{
       border-color:var(--terra);box-shadow:0 0 0 3px rgba(194,82,42,.1);
@@ -545,19 +549,19 @@
           <div class="cat-opt" onclick="selectCat(this,'comida','🍽')">
             <div class="co-ico">🍽</div><div class="co-name">Comida</div><div class="co-desc">Cocina, almuerzos</div>
           </div>
-          <div class="cat-opt" onclick="selectCat(this,'comida','🍞')">
+          <div class="cat-opt" onclick="selectCat(this,'panaderia','🍞')">
             <div class="co-ico">🍞</div><div class="co-name">Panadería</div><div class="co-desc">Pan, repostería</div>
           </div>
           <div class="cat-opt" onclick="selectCat(this,'mini_market','🛒')">
             <div class="co-ico">🛒</div><div class="co-name">Almacén</div><div class="co-desc">Abarrotes, botillería</div>
           </div>
-          <div class="cat-opt" onclick="selectCat(this,'otros','🔧')">
+          <div class="cat-opt" onclick="selectCat(this,'servicios','🔧')">
             <div class="co-ico">🔧</div><div class="co-name">Servicios</div><div class="co-desc">Gasfiter, electricista</div>
           </div>
-          <div class="cat-opt" onclick="selectCat(this,'peluqueria','✂️')">
+          <div class="cat-opt" onclick="selectCat(this,'belleza','✂️')">
             <div class="co-ico">✂️</div><div class="co-name">Belleza</div><div class="co-desc">Peluquería, manicure</div>
           </div>
-          <div class="cat-opt" onclick="selectCat(this,'otros','✨')">
+          <div class="cat-opt" onclick="selectCat(this,'emprendimiento','✨')">
             <div class="co-ico">✨</div><div class="co-name">Emprendimiento</div><div class="co-desc">Artesanía, otros</div>
           </div>
         </div>
@@ -787,11 +791,13 @@ let currentStep = 1, floatVisible = true;
 
 const CAT_BG = {
   comida:'linear-gradient(135deg,#FDEBD0,#F5C99E)',
+  panaderia:'linear-gradient(135deg,#FDE8C8,#F5C68A)',
   mini_market:'linear-gradient(135deg,#D5E8D4,#A2D09E)',
-  peluqueria:'linear-gradient(135deg,#F8D7DA,#F0A4AA)',
-  otros:'linear-gradient(135deg,#DAE8FC,#A4C4E8)',
+  servicios:'linear-gradient(135deg,#DAE8FC,#A4C4E8)',
+  belleza:'linear-gradient(135deg,#F8D7DA,#F0A4AA)',
+  emprendimiento:'linear-gradient(135deg,#E8D5F8,#C4A4E8)',
 };
-const CAT_LABEL = {comida:'Comida',mini_market:'Almacén',peluqueria:'Belleza',otros:'Emprendimiento'};
+const CAT_LABEL = {comida:'Comida',panaderia:'Panadería',mini_market:'Almacén',servicios:'Servicios',belleza:'Belleza',emprendimiento:'Emprendimiento'};
 
 /* ════ MINI MAPA ════ */
 let miniMap = null, miniMarker = null;
@@ -1104,7 +1110,7 @@ async function submitForm() {
   const payload = new URLSearchParams({
     csrfmiddlewaretoken: document.querySelector('meta[name="csrf-token"]').content,
     nombre:       document.getElementById('inp-nombre').value.trim(),
-    tipo:         ST.cat || 'otros',
+    tipo:         ST.cat || 'emprendimiento',
     direccion:    dirCompleta,
     ciudad,
     comuna,
