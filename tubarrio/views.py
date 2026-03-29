@@ -10,7 +10,7 @@ from rest_framework import viewsets
 from .serializers import NegocioSerializer
 
 
-# ── Geocodificación automática con Nominatim ──────────────────────────────────
+# ── Geocodificación automática con Nominatim ─────────────────────────────────
 def geocode(direccion, comuna='', ciudad='Chile'):
     """Convierte dirección en lat/lng usando OpenStreetMap Nominatim."""
     texto = ', '.join(filter(None, [direccion, comuna, ciudad]))
@@ -27,8 +27,25 @@ def geocode(direccion, comuna='', ciudad='Chile'):
     return None, None
 
 
-# Tipos válidos según TIPO_CHOICES del modelo
-TIPOS_VALIDOS = {'mini_market', 'belleza', 'comida', 'panaderia', 'servicios', 'emprendimiento'}
+# Tipos válidos — deben coincidir exactamente con TIPO_CHOICES del modelo
+TIPOS_VALIDOS = {
+    'mini_market',
+    'belleza',
+    'comida',
+    'panaderia',
+    'servicios',
+    'emprendimiento',
+}
+
+# Colores por categoría — usados si en el futuro los necesitas en el backend
+CAT_COLORES = {
+    'comida':          '#F5A623',
+    'mini_market':     '#5F8C68',
+    'belleza':         '#E05C8A',
+    'panaderia':       '#C0824A',
+    'servicios':       '#4A90D9',
+    'emprendimiento':  '#9B59B6',
+}
 
 
 # ── Vista principal — mapa ────────────────────────────────────────────────────
@@ -40,6 +57,7 @@ def index(request):
             'id':          n.id,
             'nombre':      n.nombre,
             'cat':         n.tipo,
+            'color':       CAT_COLORES.get(n.tipo, '#888888'),
             'dir':         n.direccion,
             'dias':        n.dias_atencion or '',
             'whatsapp':    n.whatsapp     or '',
@@ -65,6 +83,7 @@ def api_negocios(request):
             'id':          n.id,
             'nombre':      n.nombre,
             'cat':         n.tipo,
+            'color':       CAT_COLORES.get(n.tipo, '#888888'),
             'dir':         n.direccion,
             'dias':        n.dias_atencion or '',
             'whatsapp':    n.whatsapp     or '',
@@ -86,7 +105,6 @@ def ingresa_tu_negocio(request):
         comuna    = request.POST.get('comuna',    '').strip()
         ciudad    = request.POST.get('ciudad',    'Chile').strip()
 
-        # Coordenadas enviadas desde el formulario (GPS o geocoder del front)
         lat_raw = request.POST.get('latitud',  '').strip()
         lng_raw = request.POST.get('longitud', '').strip()
 
@@ -96,17 +114,12 @@ def ingresa_tu_negocio(request):
         except ValueError:
             latitud = longitud = None
 
-        # Si no vienen coordenadas del front, geocodificamos en el servidor
         if latitud is None or longitud is None:
             latitud, longitud = geocode(direccion, comuna, ciudad)
 
-        # Validar que el tipo recibido sea uno de los valores permitidos
         tipo_recibido = request.POST.get('tipo', '').strip()
         tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
 
-        # instagram y facebook vienen como texto libre del form,
-        # pero el modelo los guarda como URLField (blank/null=True).
-        # Limpiamos strings vacíos → None para no violar la validación.
         instagram_raw = request.POST.get('instagram', '').strip() or None
         facebook_raw  = request.POST.get('facebook',  '').strip() or None
 
@@ -129,7 +142,7 @@ def ingresa_tu_negocio(request):
     return render(request, 'negocio.html')
 
 
-# ── ViewSet DRF ────────────────────────────────────────────────────────────────
+# ── ViewSet DRF ───────────────────────────────────────────────────────────────
 class NegocioViewSet(viewsets.ModelViewSet):
     queryset = Negocio.objects.all()
     serializer_class = NegocioSerializer

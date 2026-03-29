@@ -263,3 +263,10 @@ body.panel-open .filters{right:var(--panel-w)}
   .modal{border-radius:20px 20px 0 0;position:fixed;bottom:0;max-height:85vh}
   .modal-ov{align-items:flex-end;padding:0}
 }
+
+/* ════════════════════════════
+   CATEGORÍAS — dot colors extra
+════════════════════════════ */
+.fcat[onclick*="panaderia"]     .dot-cat { background: #C0824A; }
+.fcat[onclick*="servicios"]     .dot-cat { background: #4A90D9; }
+.fcat[onclick*="emprendimiento"].dot-cat { background: #9B59B6; }

@@ -1,19 +1,42 @@
 /* ════════════════════════════
    CATEGORÍAS
 ════════════════════════════ */
-const CAT_COLOR = {comida:'#F5A623',mini_market:'#5F8C68',peluqueria:'#E05C8A',otros:'#4A90D9'};
-const CAT_BG = {
-  comida:'linear-gradient(135deg,#FDEBD0,#F5C99E)',
-  mini_market:'linear-gradient(135deg,#D5E8D4,#A2D09E)',
-  peluqueria:'linear-gradient(135deg,#F8D7DA,#F0A4AA)',
-  otros:'linear-gradient(135deg,#DAE8FC,#A4C4E8)'
+const CAT_COLOR = {
+  comida:         '#F5A623',
+  mini_market:    '#5F8C68',
+  belleza:        '#E05C8A',
+  panaderia:      '#C0824A',
+  servicios:      '#4A90D9',
+  emprendimiento: '#9B59B6',
 };
-const CAT_ICO   = {comida:'🍽️',mini_market:'🛒',peluqueria:'✂️',otros:'✨'};
-const CAT_LABEL = {comida:'Comida',mini_market:'Almacén / Minimarket',peluqueria:'Peluquería / Belleza',otros:'Otros servicios'};
-const catLabel = c => CAT_LABEL[c]||c;
-const catColor = c => CAT_COLOR[c]||'#8A7768';
-const catBg    = c => CAT_BG[c]||'linear-gradient(135deg,#eee,#ccc)';
-const catIco   = c => CAT_ICO[c]||'📍';
+const CAT_BG = {
+  comida:         'linear-gradient(135deg,#FDEBD0,#F5C99E)',
+  mini_market:    'linear-gradient(135deg,#D5E8D4,#A2D09E)',
+  belleza:        'linear-gradient(135deg,#F8D7DA,#F0A4AA)',
+  panaderia:      'linear-gradient(135deg,#F5E6D3,#DBA882)',
+  servicios:      'linear-gradient(135deg,#DAE8FC,#A4C4E8)',
+  emprendimiento: 'linear-gradient(135deg,#EDE0F5,#C9A4E0)',
+};
+const CAT_ICO   = {
+  comida:         '🍽️',
+  mini_market:    '🛒',
+  belleza:        '✂️',
+  panaderia:      '🥖',
+  servicios:      '🔧',
+  emprendimiento: '✨',
+};
+const CAT_LABEL = {
+  comida:         'Comida',
+  mini_market:    'Almacén / Minimarket',
+  belleza:        'Peluquería / Belleza',
+  panaderia:      'Panadería',
+  servicios:      'Servicios',
+  emprendimiento: 'Emprendimiento',
+};
+const catLabel = c => CAT_LABEL[c] || c;
+const catColor = c => CAT_COLOR[c] || '#8A7768';
+const catBg    = c => CAT_BG[c]    || 'linear-gradient(135deg,#eee,#ccc)';
+const catIco   = c => CAT_ICO[c]   || '📍';
 
 /* ════════════════════════════
    DATOS  — inyectados desde el template vía window.TB_CONFIG
