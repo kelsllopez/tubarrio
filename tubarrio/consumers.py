@@ -74,7 +74,6 @@ def negocio_to_dict(n):
         "cat":         n.tipo,
         "dir":         n.direccion,
         "dias":        n.dias_atencion or "",
-        "descripcion": n.descripcion or "",
         "instagram":   n.instagram or "",
         "facebook":    n.facebook or "",
         "whatsapp":    n.whatsapp or "",

@@ -4,12 +4,10 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TuBarrio  — Descubre lo que hay en tu barrio</title>
+  <title>TuBarrio 🇨🇱 — Descubre lo que hay en tu barrio</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-
-  <!-- Tu CSS estático -->
   <link rel="stylesheet" href="{% static 'css/tubarrio.css' %}"/>
 </head>
 <body>
@@ -18,19 +16,16 @@
 
 <!-- TOPBAR -->
 <div class="topbar">
-  <div class="logo">Tu<span>Barrio</span></div>
-
+  <div class="logo">Tu<span>Barrio</span><span class="flag">🇨🇱</span></div>
   <div class="search-wrap" id="searchWrap">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A7768" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
     <input id="searchInput" type="text" placeholder="Buscar negocio o dirección…" oninput="onSearch(this)"/>
     <button class="search-clear" onclick="clearSearch()" title="Limpiar">✕</button>
   </div>
-
   <button class="btn-gps" id="gpsBtn" onclick="useGPS()">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
     <span>Mi ubicación</span>
   </button>
-
   <a href="{% url 'ingresa_tu_negocio' %}" class="btn-reg">+ Registrar</a>
 </div>
 
@@ -85,39 +80,14 @@
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<!-- ══════════════════════════════════════════
-     DATOS DJANGO — inyectados inline para que
-     el JS externo pueda leerlos como variables
-     globales. Esto es necesario porque los datos
-     vienen del servidor y no pueden ir en un
-     archivo .js estático.
-══════════════════════════════════════════ -->
+<!-- Datos y URLs inyectadas de forma segura para el JS externo -->
 <script>
-  // URL para el botón "Registrar" usado en showEmpty()
-  const REGISTER_URL = "{% url 'ingresa_tu_negocio' %}";
-
-  // Array de negocios desde Django
-  var NEGOCIOS = [
-    {% for n in negocios %}
-    {
-      id:          {{n.id}},
-      nombre:      "{{n.nombre|escapejs}}",
-      cat:         "{{n.tipo|escapejs}}",
-      dir:         "{{n.direccion|escapejs}}",
-      dias:        "{{n.dias_atencion|escapejs}}",
-      descripcion: "{{n.descripcion|default_if_none:''|escapejs}}",
-      instagram:   "{{n.instagram|default_if_none:''|escapejs}}",
-      facebook:    "{{n.facebook|default_if_none:''|escapejs}}",
-      whatsapp:    "{{n.whatsapp|default_if_none:''|escapejs}}",
-      wsp_publico: "{{n.wsp_publico|default_if_none:'no'|escapejs}}",
-      lat:  {% if n.latitud %}{{n.latitud}}{% else %}null{% endif %},
-      lng:  {% if n.longitud %}{{n.longitud}}{% else %}null{% endif %},
-    }{% if not forloop.last %},{% endif %}
-    {% endfor %}
-  ];
+  window.TB_CONFIG = {
+    negocios:     {{ negocios_json|safe }},
+    urlRegistrar: "{% url 'ingresa_tu_negocio' %}",
+    urlApi:       "/api/negocios/"
+  };
 </script>
-
-<!-- Tu JS estático — debe ir DESPUÉS del bloque de datos Django -->
 <script src="{% static 'js/tubarrio.js' %}"></script>
 
 </body>

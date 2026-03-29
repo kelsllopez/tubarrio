@@ -19,7 +19,7 @@ class NegocioAdmin(admin.ModelAdmin):
         'nombre', 'tipo', 'direccion', 'estado', 'ver_mapa_mini', 'fecha_creacion'
     )
     list_filter = ('tipo', 'estado', 'fecha_creacion')
-    search_fields = ('nombre', 'direccion', 'descripcion')
+    search_fields = ('nombre', 'direccion', )
     ordering = ('-fecha_creacion',)
 
     actions = ['aprobar_negocios']
@@ -41,7 +41,7 @@ class NegocioAdmin(admin.ModelAdmin):
         if obj and obj.pk:
             return (
                 ('Información básica', {
-                    'fields': ('nombre', 'tipo', 'descripcion')
+                    'fields': ('nombre', 'tipo')
                 }),
                 ('Ubicación', {
                     'fields': ('ciudad', 'comuna', 'direccion', 'latitud', 'longitud', 'mapa_preview')
@@ -60,7 +60,7 @@ class NegocioAdmin(admin.ModelAdmin):
             # Creación: sin mapa_preview para evitar el crash de Jazzmin
             return (
                 ('Información básica', {
-                    'fields': ('nombre', 'tipo', 'descripcion')
+                    'fields': ('nombre', 'tipo')
                 }),
                 ('Ubicación', {
                     'fields': ('ciudad', 'comuna', 'direccion', 'latitud', 'longitud')

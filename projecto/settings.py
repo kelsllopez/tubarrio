@@ -142,7 +142,6 @@ CHANNEL_LAYERS = {
     }
 }
 
-# settings.py
 
 JAZZMIN_SETTINGS = {
     # ── Identidad ──────────────────────────────────────────
