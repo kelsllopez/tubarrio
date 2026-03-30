@@ -27,7 +27,6 @@ def geocode(direccion, comuna='', ciudad='Chile'):
     return None, None
 
 
-# Tipos válidos — deben coincidir exactamente con TIPO_CHOICES del modelo
 TIPOS_VALIDOS = {
     'mini_market',
     'belleza',
@@ -37,7 +36,6 @@ TIPOS_VALIDOS = {
     'emprendimiento',
 }
 
-# Colores por categoría — usados si en el futuro los necesitas en el backend
 CAT_COLORES = {
     'comida':          '#F5A623',
     'mini_market':     '#5F8C68',
@@ -54,18 +52,18 @@ def index(request):
 
     negocios_json = json.dumps([
         {
-            'id':          n.id,
-            'nombre':      n.nombre,
-            'cat':         n.tipo,
-            'color':       CAT_COLORES.get(n.tipo, '#888888'),
-            'dir':         n.direccion,
-            'dias':        n.dias_atencion or '',
-            'whatsapp':    n.whatsapp     or '',
-            'wsp_publico': 'si' if n.whatsapp else 'no',
-            'instagram':   n.instagram    or '',
-            'facebook':    n.facebook     or '',
-            'lat':         n.latitud,
-            'lng':         n.longitud,
+            'id':        n.id,
+            'nombre':    n.nombre,
+            'cat':       n.tipo,
+            'color':     CAT_COLORES.get(n.tipo, '#888888'),
+            'dir':       n.direccion,
+            'dias':      n.dias_atencion or '',
+            # ✅ Si whatsapp es None en la BD, jamás llega al mapa
+            'whatsapp':  n.whatsapp or '',
+            'instagram': n.instagram or '',
+            'facebook':  n.facebook  or '',
+            'lat':       n.latitud,
+            'lng':       n.longitud,
         }
         for n in qs
     ], ensure_ascii=False)
@@ -80,18 +78,18 @@ def api_negocios(request):
 
     data = [
         {
-            'id':          n.id,
-            'nombre':      n.nombre,
-            'cat':         n.tipo,
-            'color':       CAT_COLORES.get(n.tipo, '#888888'),
-            'dir':         n.direccion,
-            'dias':        n.dias_atencion or '',
-            'whatsapp':    n.whatsapp     or '',
-            'wsp_publico': 'si' if n.whatsapp else 'no',
-            'instagram':   n.instagram    or '',
-            'facebook':    n.facebook     or '',
-            'lat':         n.latitud,
-            'lng':         n.longitud,
+            'id':        n.id,
+            'nombre':    n.nombre,
+            'cat':       n.tipo,
+            'color':     CAT_COLORES.get(n.tipo, '#888888'),
+            'dir':       n.direccion,
+            'dias':      n.dias_atencion or '',
+            # ✅ Si whatsapp es None en la BD, jamás llega al mapa
+            'whatsapp':  n.whatsapp or '',
+            'instagram': n.instagram or '',
+            'facebook':  n.facebook  or '',
+            'lat':       n.latitud,
+            'lng':       n.longitud,
         }
         for n in qs
     ]
@@ -120,15 +118,22 @@ def ingresa_tu_negocio(request):
         tipo_recibido = request.POST.get('tipo', '').strip()
         tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
 
+        # ✅ CORRECCIÓN CLAVE: solo se guarda el WhatsApp si el usuario
+        # marcó explícitamente el checkbox. Si no lo marcó → None en la BD
+        # → nunca aparece en el mapa, sin importar nada más.
+        wsp_publico  = request.POST.get('wsp_publico', 'no').strip()
+        whatsapp_raw = request.POST.get('whatsapp', '').strip() or None
+        whatsapp     = whatsapp_raw if wsp_publico == 'si' else None
+
         instagram_raw = request.POST.get('instagram', '').strip() or None
         facebook_raw  = request.POST.get('facebook',  '').strip() or None
 
         Negocio.objects.create(
-            nombre        = request.POST.get('nombre',        '').strip(),
+            nombre        = request.POST.get('nombre', '').strip(),
             tipo          = tipo,
             direccion     = direccion,
             dias_atencion = request.POST.get('dias_atencion', '').strip(),
-            whatsapp      = request.POST.get('whatsapp',      '').strip() or None,
+            whatsapp      = whatsapp,   # None si no autorizó → jamás visible
             instagram     = instagram_raw,
             facebook      = facebook_raw,
             comuna        = comuna,
