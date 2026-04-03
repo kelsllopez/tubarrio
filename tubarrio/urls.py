@@ -6,11 +6,12 @@ from .views import NegocioViewSet
 router = DefaultRouter()
 router.register(r'negocios', NegocioViewSet)
 
-urlpatterns = router.urls
-
 urlpatterns = [
     path('', views.index, name='index'),
     path('ingresa_tu_negocio/', views.ingresa_tu_negocio, name='ingresa_tu_negocio'),
-    path('api/negocios/',       views.api_negocios,       name='api_negocios'),  # ← esta línea
- 
+    path('api/negocios/', views.api_negocios, name='api_negocios'),
+    path('api/healthz/', views.healthz, name='healthz'),
 ]
+
+# Endpoints DRF (si se usan) además de las vistas normales
+urlpatterns += router.urls

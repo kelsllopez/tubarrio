@@ -704,7 +704,7 @@ function usarUbicacionActual() {
       btn.innerHTML = '🔍 Buscando dirección...';
       try {
         const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es`;
-        const res  = await fetch(url, { headers: { 'User-Agent': 'TuBarrio/1.0' } });
+        const res  = await fetch(url);
         const data = await res.json();
         if (data && data.address) {
           const a = data.address;
@@ -753,8 +753,8 @@ async function geocode(dir, ciudad, comuna) {
   setGeoStatus('loading', '⏳', 'Buscando ubicación...', '');
   setGeoClass('loading');
   try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=cl`;
-    const res  = await fetch(url, { headers: { 'Accept-Language': 'es', 'User-Agent': 'TuBarrio/1.0' } });
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=cl&accept-language=es`;
+    const res  = await fetch(url);
     const data = await res.json();
     if (data && data.length > 0) {
       const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
@@ -767,8 +767,8 @@ async function geocode(dir, ciudad, comuna) {
       updatePreview();
     } else {
       try {
-        const url2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ciudad + ', Chile')}&format=json&limit=1&countrycodes=cl`;
-        const res2  = await fetch(url2, { headers: { 'Accept-Language': 'es', 'User-Agent': 'TuBarrio/1.0' } });
+        const url2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ciudad + ', Chile')}&format=json&limit=1&countrycodes=cl&accept-language=es`;
+        const res2  = await fetch(url2);
         const data2 = await res2.json();
         if (data2 && data2.length > 0) {
           const lat = parseFloat(data2[0].lat), lng = parseFloat(data2[0].lon);

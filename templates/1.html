@@ -4,9 +4,17 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#FDFAF4"/>
   <title>TuBarrio  — Descubre lo que hay en tu barrio</title>
+
+  <link rel="preconnect" href="https://unpkg.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
+
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="{% static 'css/tubarrio.css' %}"/>
 </head>
@@ -15,39 +23,40 @@
 <div id="map"></div>
 
 <!-- TOPBAR -->
-<div class="topbar">
-  <div class="logo">Tu<span>Barrio</span><span class="flag"></span></div>
-  <div class="search-wrap" id="searchWrap">
+<div class="topbar" role="banner">
+  <div class="logo" aria-label="TuBarrio">Tu<span>Barrio</span><span class="flag" aria-hidden="true"></span></div>
+  <div class="search-wrap" id="searchWrap" role="search">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8A7768" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-    <input id="searchInput" type="text" placeholder="Buscar negocio o dirección…" oninput="onSearch(this)"/>
-    <button class="search-clear" onclick="clearSearch()" title="Limpiar">✕</button>
+    <input id="searchInput" type="search" placeholder="Buscar negocio o dirección…" oninput="onSearch(this)" autocomplete="off" enterkeyhint="search"/>
+    <button class="search-clear" onclick="clearSearch()" title="Limpiar" aria-label="Limpiar búsqueda">✕</button>
   </div>
-  <button class="btn-gps" id="gpsBtn" onclick="useGPS()">
+  <button class="btn-gps" id="gpsBtn" onclick="useGPS()" aria-describedby="gpsHint">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
     <span>Mi ubicación</span>
   </button>
   <a href="{% url 'ingresa_tu_negocio' %}" class="btn-reg">+ Registrar</a>
 </div>
+<div class="sr-only" id="gpsHint">Activa tu GPS para ver negocios cerca y ordenar por distancia.</div>
 
 <!-- FILTROS -->
-<div class="filters" id="filtersBar">
-  <button class="fcat on" onclick="filterBy(this,'all')">🗂 Todos</button>
-  <button class="fcat" onclick="filterBy(this,'comida')">
+<div class="filters" id="filtersBar" role="navigation" aria-label="Filtros por categoría">
+  <button class="fcat on" onclick="filterBy(this,'all')" aria-pressed="true" data-cat="all">🗂 Todos</button>
+  <button class="fcat" onclick="filterBy(this,'comida')" aria-pressed="false" data-cat="comida">
     <span class="dot-cat" style="background:#F5A623"></span>Comida
   </button>
-  <button class="fcat" onclick="filterBy(this,'mini_market')">
+  <button class="fcat" onclick="filterBy(this,'mini_market')" aria-pressed="false" data-cat="mini_market">
     <span class="dot-cat" style="background:#5F8C68"></span>Almacenes
   </button>
-  <button class="fcat" onclick="filterBy(this,'belleza')">
+  <button class="fcat" onclick="filterBy(this,'belleza')" aria-pressed="false" data-cat="belleza">
     <span class="dot-cat" style="background:#E05C8A"></span>Belleza
   </button>
-  <button class="fcat" onclick="filterBy(this,'panaderia')">
+  <button class="fcat" onclick="filterBy(this,'panaderia')" aria-pressed="false" data-cat="panaderia">
     <span class="dot-cat" style="background:#C0824A"></span>Panadería
   </button>
-  <button class="fcat" onclick="filterBy(this,'servicios')">
+  <button class="fcat" onclick="filterBy(this,'servicios')" aria-pressed="false" data-cat="servicios">
     <span class="dot-cat" style="background:#4A90D9"></span>Servicios
   </button>
-  <button class="fcat" onclick="filterBy(this,'emprendimiento')">
+  <button class="fcat" onclick="filterBy(this,'emprendimiento')" aria-pressed="false" data-cat="emprendimiento">
     <span class="dot-cat" style="background:#9B59B6"></span>Emprendimientos
   </button>
 </div>
@@ -66,7 +75,7 @@
     <button class="sort-btn" onclick="setSort(this,'az')">A–Z</button>
     <button class="sort-btn" onclick="setSort(this,'cercano')">Cerca mío</button>
   </div>
-  <div class="panel-list" id="panelList"></div>
+  <div class="panel-list" id="panelList" role="list"></div>
 </div>
 <button class="btn-open-panel" id="openPanelBtn" onclick="togglePanel()" aria-label="Ver lista">≡ Lista</button>
 
@@ -78,6 +87,9 @@
   <div class="live-dot"></div>
   <span>En vivo · <strong id="liveCount">0</strong> negocios</span>
 </div>
+
+<!-- STATUS (errores / carga) -->
+<div class="statusbar" id="statusBar" aria-live="polite" aria-atomic="true"></div>
 
 <!-- MODAL -->
 <div class="modal-ov" id="detailModal" role="dialog" aria-modal="true">
@@ -93,16 +105,20 @@
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<noscript><div class="noscript">Necesitas JavaScript para usar el mapa de TuBarrio.</div></noscript>
 
 <!-- Datos y URLs inyectadas de forma segura para el JS externo -->
 <script>
   window.TB_CONFIG = {
     negocios:     {{ negocios_json|safe }},
     urlRegistrar: "{% url 'ingresa_tu_negocio' %}",
-    urlApi:       "/api/negocios/"
+    urlApi:       "{% url 'api_negocios' %}"
   };
 </script>
-<script src="{% static 'js/tubarrio.js' %}"></script>
+
+<script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script defer src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script defer src="{% static 'js/tubarrio.js' %}"></script>
 
 </body>
 </html>

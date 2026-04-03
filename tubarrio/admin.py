@@ -6,10 +6,10 @@ from django.utils import timezone
 from django.db.models import Count
 from django.db.models.functions import TruncMonth
 from .models import Negocio
-
+from import_export.admin import ImportExportModelAdmin
 
 @admin.register(Negocio)
-class NegocioAdmin(admin.ModelAdmin):
+class NegocioAdmin(ImportExportModelAdmin):
 
     class Media:
         css = {'all': ('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css',)}

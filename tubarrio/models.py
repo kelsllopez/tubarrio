@@ -33,6 +33,33 @@ class Negocio(models.Model):
 
     estado        = models.CharField(max_length=10, choices=ESTADO_CHOICES, default='pendiente')
     fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_modificacion = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        indexes = [
+            models.Index(fields=['estado', '-fecha_creacion']),
+            models.Index(fields=['estado', 'tipo']),
+            models.Index(fields=['tipo']),
+            models.Index(fields=['fecha_creacion']),
+            models.Index(fields=['estado', '-fecha_modificacion']),
+        ]
 
     def __str__(self):
         return self.nombre
+
+
+class GeocodeCache(models.Model):
+    """Cache de resultados Nominatim (clave normalizada por dirección+comuna+ciudad)."""
+
+    clave = models.CharField(max_length=512, unique=True, db_index=True)
+    latitud = models.FloatField()
+    longitud = models.FloatField()
+    creado = models.DateTimeField(auto_now_add=True)
+    actualizado = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Cache geocodificación'
+        verbose_name_plural = 'Caches geocodificación'
+
+    def __str__(self):
+        return self.clave[:80]
