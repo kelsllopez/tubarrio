@@ -3,365 +3,21 @@
 <html lang="es-CL">
 <head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
   <meta name="csrf-token" content="{{ csrf_token }}">
-  <title>TuBarrio  — Registrar mi negocio</title>
+  <title>TuBarrio — Registrar mi negocio</title>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,700;0,900;1,400;1,700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <style>
-    :root {
-      --cream: #F6F1E9; --warm: #EDE4D6; --bark: #241A10;
-      --terra: #C2522A; --gold: #D4A540; --sage: #5F8C68;
-      --dust: #8A7768; --card: #FDFAF4; --err: #D0302A; --ok: #5F8C68;
-    }
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    html { scroll-behavior: smooth; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--bark); min-height: 100vh; }
-
-    /* NAV */
-    nav {
-      position: sticky; top: 0; z-index: 100;
-      display: flex; align-items: center; justify-content: space-between;
-      padding: .9rem 2rem;
-      background: rgba(246,241,233,.95); backdrop-filter: blur(14px);
-      border-bottom: 1px solid rgba(36,26,16,.08);
-    }
-    .logo { font-family:'Fraunces',serif; font-weight:900; font-size:1.4rem; color:var(--bark); letter-spacing:-.02em; display:flex; align-items:center; gap:.35rem; text-decoration:none; }
-    .logo span { color: var(--terra); }
-    .nav-back { display:flex; align-items:center; gap:.45rem; font-size:.85rem; font-weight:500; color:var(--dust); text-decoration:none; transition:color .2s; }
-    .nav-back:hover { color: var(--bark); }
-
-    /* LAYOUT */
-    .page-wrap { display: grid; grid-template-columns: 1fr 1.1fr; min-height: calc(100vh - 58px); }
-
-    /* LEFT */
-    .left-panel {
-      background: var(--bark); padding: 4rem 3rem;
-      display: flex; flex-direction: column; justify-content: center;
-      position: sticky; top: 58px; height: calc(100vh - 58px); overflow: hidden;
-    }
-    .left-panel::before { content:''; position:absolute; width:500px; height:500px; border-radius:50%; background:rgba(194,82,42,.12); top:-150px; right:-150px; }
-    .left-panel::after  { content:''; position:absolute; width:350px; height:350px; border-radius:50%; background:rgba(212,165,64,.09); bottom:-100px; left:-80px; }
-    .left-content { position: relative; z-index: 1; }
-    .left-chip { display:inline-flex; align-items:center; gap:.4rem; background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); padding:.3rem .85rem; border-radius:100px; font-size:.75rem; font-weight:600; color:var(--gold); letter-spacing:.08em; text-transform:uppercase; margin-bottom:1.5rem; }
-    .left-panel h1 { font-family:'Fraunces',serif; font-size:clamp(2rem,3vw,3rem); font-weight:900; line-height:1.05; letter-spacing:-.035em; color:var(--cream); margin-bottom:1.1rem; }
-    .left-panel h1 em { font-style:italic; color:var(--gold); }
-    .left-panel p { color:rgba(246,241,233,.6); font-size:1rem; line-height:1.72; max-width:380px; margin-bottom:2.5rem; }
-    .benefits { display:flex; flex-direction:column; gap:.9rem; }
-    .benefit { display:flex; align-items:flex-start; gap:.85rem; }
-    .b-ico { width:38px; height:38px; flex-shrink:0; background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.1); border-radius:11px; display:grid; place-items:center; font-size:1.1rem; }
-    .b-text strong { display:block; font-size:.9rem; color:var(--cream); margin-bottom:.1rem; }
-    .b-text span { font-size:.82rem; color:rgba(246,241,233,.5); line-height:1.5; }
-    .step-indicator { display:flex; align-items:center; gap:.5rem; margin-top:2.5rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,.08); }
-    .si-dot { width:28px; height:28px; border-radius:50%; display:grid; place-items:center; font-size:.72rem; font-weight:700; background:rgba(255,255,255,.08); color:rgba(246,241,233,.4); border:1.5px solid rgba(255,255,255,.1); transition:all .3s; flex-shrink:0; }
-    .si-dot.done   { background:var(--sage); color:#fff; border-color:var(--sage); }
-    .si-dot.active { background:var(--gold); color:var(--bark); border-color:var(--gold); transform:scale(1.15); }
-    .si-line { flex:1; height:1.5px; background:rgba(255,255,255,.1); }
-    .si-line.done { background:var(--sage); }
-    .si-label { font-size:.72rem; color:rgba(246,241,233,.45); margin-top:.25rem; text-align:center; }
-
-    /* RIGHT */
-    .right-panel { padding: 3.5rem 3rem 2.5rem; overflow-y: auto; background: var(--cream); }
-    .step-form { display:none; animation:fadeUp .35s ease both; }
-    .step-form.active { display:block; }
-    @keyframes fadeUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
-    .form-title { font-family:'Fraunces',serif; font-size:1.7rem; font-weight:900; letter-spacing:-.03em; margin-bottom:.3rem; }
-    .form-sub { font-size:.9rem; color:var(--dust); margin-bottom:2rem; line-height:1.6; }
-
-    /* FIELDS */
-    .field { margin-bottom:1.3rem; }
-    .field label { display:block; font-size:.8rem; font-weight:600; margin-bottom:.42rem; color:var(--bark); display:flex; align-items:center; gap:.3rem; }
-    .req { color:var(--terra); font-size:.85rem; }
-    .field input, .field select, .field textarea {
-      width:100%; padding:.75rem 1rem; border-radius:12px;
-      border:1.5px solid rgba(36,26,16,.13); background:var(--card);
-      font-family:'DM Sans',sans-serif; font-size:.92rem; color:var(--bark);
-      outline:none; transition:border-color .2s, box-shadow .2s;
-    }
-    .field input:focus, .field select:focus, .field textarea:focus { border-color:var(--terra); box-shadow:0 0 0 3px rgba(194,82,42,.1); }
-    .field input.err, .field select.err { border-color:var(--err); }
-    .field .err-msg { font-size:.75rem; color:var(--err); margin-top:.3rem; display:none; }
-    .field.has-err .err-msg { display:block; }
-    .field .hint { font-size:.75rem; color:var(--dust); margin-top:.28rem; }
-    .field-row { display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
-
-    /* CATEGORÍAS */
-    .cat-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:.7rem; margin-bottom:1.3rem; }
-    .cat-opt { border:1.5px solid rgba(36,26,16,.12); border-radius:14px; padding:1rem .8rem; text-align:center; cursor:pointer; transition:all .18s; background:var(--card); }
-    .cat-opt:hover { border-color:var(--terra); background:#FFF5F1; }
-    .cat-opt.selected { border-color:var(--terra); background:#FFF5F1; box-shadow:0 0 0 3px rgba(194,82,42,.12); }
-    .cat-opt .co-ico  { font-size:1.6rem; margin-bottom:.35rem; }
-    .cat-opt .co-name { font-size:.78rem; font-weight:600; color:var(--bark); }
-    .cat-opt .co-desc { font-size:.68rem; color:var(--dust); margin-top:.1rem; }
-
-    /* DÍAS */
-    .days-grid { display:flex; gap:.45rem; flex-wrap:wrap; margin-bottom:.4rem; }
-    .day-btn { width:40px; height:40px; border-radius:10px; border:1.5px solid rgba(36,26,16,.13); background:var(--card); cursor:pointer; font-size:.78rem; font-weight:600; color:var(--dust); transition:all .15s; }
-    .day-btn.on { background:var(--bark); color:var(--cream); border-color:var(--bark); }
-
-    /* REDES */
-    .red-field { display:flex; align-items:center; gap:.6rem; background:var(--card); border:1.5px solid rgba(36,26,16,.12); border-radius:12px; padding:.65rem .9rem; margin-bottom:.4rem; transition:border-color .2s; }
-    .red-field:focus-within { border-color:var(--terra); }
-    .red-icon { font-size:1.1rem; flex-shrink:0; }
-    .red-field input { border:none; background:transparent; outline:none; font-family:'DM Sans',sans-serif; font-size:.9rem; color:var(--bark); width:100%; }
-    .red-field input::placeholder { color:var(--dust); }
-
-    /* HORARIO */
-    .horario-wrap { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:.6rem; margin-bottom:.4rem; }
-    .horario-sep { color:var(--dust); font-size:.85rem; text-align:center; }
-
-    /* AVISO VISIBILIDAD */
-    .visibility-notice {
-      background:#FFF8EE; border:1.5px solid rgba(212,165,64,.35);
-      border-radius:12px; padding:.75rem 1rem;
-      margin-bottom:1.3rem;
-      font-size:.82rem; color:var(--dust);
-      display:flex; gap:.6rem; align-items:flex-start;
-      line-height:1.55;
-    }
-    .visibility-notice strong { color:var(--bark); }
-    .field-public-hint { font-size:.75rem; color:var(--dust); margin-top:.28rem; display:flex; align-items:center; gap:.3rem; }
-    .privacy-check {
-      display:flex; align-items:flex-start; gap:.6rem; cursor:pointer;
-      margin-top:.65rem;
-      background:var(--warm); border:1px solid rgba(36,26,16,.1);
-      border-radius:10px; padding:.65rem .9rem;
-    }
-    .privacy-check input[type="checkbox"] { width:auto; margin-top:3px; accent-color:var(--terra); flex-shrink:0; }
-    .privacy-check span { font-size:.83rem; color:var(--bark); line-height:1.5; }
-
-    /* BOTÓN GPS */
-    .btn-gps-loc {
-      display: flex; align-items: center; justify-content: center; gap: .55rem;
-      width: 100%; padding: .8rem 1rem;
-      background: var(--bark); color: var(--cream);
-      border: none; border-radius: 12px; cursor: pointer;
-      font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 600;
-      transition: background .2s, transform .15s;
-      margin-bottom: .8rem;
-    }
-    .btn-gps-loc:hover  { background: var(--terra); transform: translateY(-1px); }
-    .btn-gps-loc:active { transform: translateY(0); }
-    .btn-gps-loc:disabled { opacity: .6; cursor: not-allowed; transform: none; }
-
-    .dir-divider {
-      display: flex; align-items: center; gap: .7rem;
-      margin-bottom: .8rem; color: var(--dust); font-size: .8rem;
-    }
-    .dir-divider::before, .dir-divider::after {
-      content: ''; flex: 1; height: 1px; background: rgba(36,26,16,.12);
-    }
-
-    /* GEOCODER */
-    .geo-wrap {
-      border: 1.5px solid rgba(36,26,16,.13);
-      border-radius: 14px; overflow: hidden;
-      margin-top: .5rem; background: var(--card);
-      transition: border-color .2s;
-    }
-    .geo-wrap.loading { border-color: var(--gold); }
-    .geo-wrap.ok      { border-color: var(--sage); }
-    .geo-wrap.fail    { border-color: var(--err); }
-
-    .geo-status {
-      display: flex; align-items: center; gap: .6rem;
-      padding: .65rem 1rem; font-size: .8rem;
-      color: var(--dust); background: var(--warm);
-      border-bottom: 1px solid rgba(36,26,16,.07);
-      min-height: 40px;
-    }
-    .geo-status .gs-ico { font-size: 1rem; flex-shrink: 0; }
-    .geo-status .gs-text { flex: 1; }
-    .geo-status .gs-coords { font-size: .72rem; font-family: monospace; color: var(--sage); font-weight: 600; }
-    .btn-retry { background: var(--terra); color: #fff; border: none; border-radius: 7px; padding: .25rem .65rem; font-size: .72rem; font-weight: 600; cursor: pointer; flex-shrink: 0; }
-    .btn-retry:hover { background: #A8401E; }
-
-    #miniMap { height: 200px; width: 100%; display: none; }
-    #miniMap.visible { display: block; }
-    .map-hint {
-      position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
-      background: rgba(36,26,16,.75); color: #fff;
-      font-size: .7rem; padding: .25rem .75rem;
-      border-radius: 100px; pointer-events: none;
-      white-space: nowrap; z-index: 1000;
-    }
-
-    /* PREVIEW FLOTANTE */
-    .preview-float {
-      position: fixed; bottom: 1.5rem; right: 1.5rem;
-      width: 280px; background: var(--card);
-      border: 1px solid rgba(36,26,16,.1); border-radius: 18px;
-      box-shadow: 0 12px 40px rgba(36,26,16,.18);
-      overflow: hidden; z-index: 200;
-      transform: translateY(0); transition: transform .3s, opacity .3s;
-      opacity: 1;
-    }
-    .preview-float.hidden { transform: translateY(120%); opacity: 0; pointer-events: none; }
-    .pf-head { height: 70px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem; position: relative; }
-    .pf-live-badge { position: absolute; top: 8px; right: 10px; background: var(--terra); color: #fff; font-size: .62rem; font-weight: 700; letter-spacing: .06em; padding: .18rem .5rem; border-radius: 100px; display: flex; align-items: center; gap: .3rem; }
-    .pf-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #fff; animation: pulse 1.4s infinite; }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
-    .pf-body { padding: .9rem 1rem 1rem; }
-    .pf-name { font-family:'Fraunces',serif; font-weight:700; font-size:.95rem; margin-bottom:.15rem; }
-    .pf-cat  { font-size:.7rem; color:var(--terra); font-weight:600; margin-bottom:.6rem; }
-    .pf-info { display:flex; flex-direction:column; gap:.22rem; }
-    .pf-row  { display:flex; align-items:center; gap:.35rem; font-size:.75rem; color:var(--dust); }
-    .pf-row svg { opacity:.5; flex-shrink:0; }
-    .pf-toggle { position: absolute; top: 8px; left: 10px; background: rgba(36,26,16,.55); color: #fff; border: none; border-radius: 8px; font-size: .65rem; font-weight: 600; padding: .18rem .5rem; cursor: pointer; backdrop-filter: blur(4px); }
-    .pf-toggle:hover { background: rgba(36,26,16,.75); }
-
-    /* PREVIEW PASO 4 */
-    .preview-card { background:var(--card); border:1px solid rgba(36,26,16,.08); border-radius:18px; overflow:hidden; box-shadow:0 8px 30px rgba(36,26,16,.1); margin-bottom:2rem; }
-    .pc-head { height:90px; display:flex; align-items:center; justify-content:center; font-size:3rem; }
-    .pc-body { padding:1.1rem 1.3rem 1.3rem; }
-    .pc-name { font-family:'Fraunces',serif; font-weight:700; font-size:1.05rem; }
-    .pc-cat  { font-size:.73rem; color:var(--terra); font-weight:600; margin-bottom:.7rem; }
-    .pc-info { display:flex; flex-direction:column; gap:.28rem; }
-    .pc-row  { display:flex; align-items:center; gap:.4rem; font-size:.8rem; color:var(--dust); }
-    .pc-row svg { opacity:.5; flex-shrink:0; }
-    .pc-pub-tag { display:inline-flex; align-items:center; gap:.3rem; font-size:.68rem; font-weight:600; background:rgba(95,140,104,.12); color:var(--sage); border-radius:100px; padding:.1rem .5rem; margin-left:.4rem; }
-
-    /* BOTONES */
-    .btn-next {
-      width:100%; padding:.95rem;
-      background:var(--terra); color:#fff;
-      border:none; border-radius:14px;
-      font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:600;
-      cursor:pointer;
-      box-shadow:0 4px 20px rgba(194,82,42,.3);
-      transition:transform .15s, box-shadow .15s, background .2s;
-      display:flex; align-items:center; justify-content:center; gap:.5rem;
-      margin-top:.5rem; position: relative; z-index: 1;
-    }
-    .btn-next:hover { transform:translateY(-2px); box-shadow:0 8px 28px rgba(194,82,42,.4); }
-    .btn-next:disabled { opacity:.6; cursor:not-allowed; transform:none; }
-    .btn-back {
-      width:100%; padding:.85rem;
-      background:transparent; color:var(--dust);
-      border:1.5px solid rgba(36,26,16,.13); border-radius:14px;
-      font-family:'DM Sans',sans-serif; font-size:.92rem; font-weight:500;
-      cursor:pointer; transition:all .2s; margin-top:.6rem;
-    }
-    .btn-back:hover { border-color:var(--bark); color:var(--bark); }
-
-    .spinner { width:18px; height:18px; border-radius:50%; border:2.5px solid rgba(255,255,255,.35); border-top-color:#fff; animation:spin .7s linear infinite; display:inline-block; }
-    @keyframes spin { to { transform:rotate(360deg); } }
-
-    /* SUCCESS */
-    .success-screen { display:none; text-align:center; animation:fadeUp .5s ease both; padding:2rem 0; }
-    .success-screen.active { display:block; }
-    .success-ico { width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,#D5E8D4,#A2D09E); display:grid; place-items:center; font-size:2.5rem; margin:0 auto 1.5rem; animation:pop .5s .1s ease both; }
-    @keyframes pop { from{transform:scale(.5);opacity:0} to{transform:scale(1);opacity:1} }
-    .success-screen h2 { font-family:'Fraunces',serif; font-size:2rem; font-weight:900; margin-bottom:.6rem; }
-    .success-screen p { color:var(--dust); font-size:.95rem; line-height:1.7; max-width:380px; margin:0 auto 2rem; }
-    .steps-list { display:flex; flex-direction:column; gap:.7rem; background:var(--card); border-radius:16px; padding:1.3rem; margin-bottom:2rem; border:1px solid rgba(36,26,16,.07); text-align:left; }
-    .step-item { display:flex; align-items:center; gap:.8rem; font-size:.88rem; }
-    .step-item .si { width:28px; height:28px; border-radius:8px; background:var(--warm); display:grid; place-items:center; font-size:.9rem; flex-shrink:0; }
-
-    .progress-bar-wrap { height:3px; background:rgba(36,26,16,.08); border-radius:100px; margin-bottom:2rem; overflow:hidden; }
-    .progress-bar { height:100%; background:var(--terra); border-radius:100px; transition:width .4s cubic-bezier(.4,0,.2,1); }
-
-    .error-banner { background:#FFF0EF; border:1.5px solid var(--err); border-radius:12px; padding:.8rem 1rem; font-size:.85rem; color:var(--err); margin-bottom:1.2rem; display:none; align-items:center; gap:.6rem; }
-    .error-banner.show { display:flex; }
-
-    /* ── RESPONSIVE MÓVIL ── */
-    @media (max-width: 860px) {
-      .page-wrap { grid-template-columns: 1fr; }
-
-      /* El panel izquierdo colapsa a un header compacto */
-      .left-panel {
-        position: static; height: auto;
-        padding: 2rem 1.5rem 1.8rem;
-      }
-      .left-panel h1 { font-size: 1.75rem; }
-      .left-panel p  { display: none; }
-      .benefits      { display: none; }
-
-      /* Step indicator se mueve abajo del panel izquierdo en móvil */
-      .step-indicator { margin-top: 1.5rem; padding-top: 1.5rem; }
-
-      .right-panel { padding: 2rem 1.25rem 5rem; }
-      .field-row   { grid-template-columns: 1fr; gap: .9rem; }
-      .cat-grid    { grid-template-columns: repeat(2, 1fr); }
-
-      /* Preview flotante más compacta */
-      .preview-float { width: 260px; bottom: 1rem; right: 1rem; }
-    }
-
-    @media (max-width: 480px) {
-      nav { padding: .75rem 1.1rem; }
-      .logo { font-size: 1.2rem; }
-
-      .left-panel { padding: 1.5rem 1.1rem 1.4rem; }
-      .left-chip  { font-size: .7rem; padding: .25rem .7rem; }
-      .left-panel h1 { font-size: 1.5rem; }
-
-      .right-panel { padding: 1.5rem 1rem 6rem; }
-      .form-title  { font-size: 1.35rem; }
-      .form-sub    { font-size: .85rem; margin-bottom: 1.4rem; }
-
-      /* Cat grid de 2 columnas en móvil pequeño */
-      .cat-grid { grid-template-columns: repeat(2, 1fr); gap: .55rem; }
-      .cat-opt  { padding: .8rem .6rem; }
-      .cat-opt .co-ico  { font-size: 1.4rem; }
-      .cat-opt .co-desc { display: none; }
-
-      /* Preview flotante: pill mínima */
-      .preview-float {
-        width: auto; right: .75rem; bottom: .75rem;
-        border-radius: 100px;
-      }
-      .pf-body       { display: none; }
-      .pf-head       { height: 46px; width: 46px; border-radius: 100px; font-size: 1.5rem; padding: 0; }
-      .pf-live-badge { display: none; }
-      .pf-toggle     { display: none; }
-
-      /* Días más grandes en touch */
-      .day-btn { width: 44px; height: 44px; font-size: .82rem; }
-
-      /* Botones más cómodos en touch */
-      .btn-next { padding: 1rem; font-size: .95rem; }
-      .btn-back { padding: .9rem; }
-    }
-  </style>
+  <link rel="stylesheet" href="{% static 'css/negocio.css' %}"/>
 </head>
 <body>
-
 <nav>
-  <a class="logo" href="{% url 'index' %}">Tu<span>Barrio</span> </a>
+  <a class="logo" href="{% url 'index' %}">Tu<span>Barrio</span></a>
   <a class="nav-back" href="{% url 'index' %}">
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
     Volver al mapa
   </a>
 </nav>
-
-<!-- PREVIEW FLOTANTE -->
-<div class="preview-float hidden" id="previewFloat">
-  <div class="pf-head" id="pfHead" style="background:linear-gradient(135deg,#FDEBD0,#F5C99E)">
-    🏪
-    <div class="pf-live-badge"><div class="pf-live-dot"></div>LIVE</div>
-    <button class="pf-toggle" onclick="toggleFloat()" id="pfToggleBtn">ocultar</button>
-  </div>
-  <div class="pf-body">
-    <div class="pf-name" id="pfName">Nombre de tu negocio</div>
-    <div class="pf-cat"  id="pfCat">Categoría · Ciudad</div>
-    <div class="pf-info">
-      <div class="pf-row">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-        <span id="pfDir">Dirección</span>
-      </div>
-      <div class="pf-row" id="pfGeoRow" style="display:none">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-        <span style="color:var(--sage);font-weight:600;font-size:.72rem">📍 Ubicación GPS</span>
-      </div>
-      <div class="pf-row">
-        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-        <span id="pfHora">08:00 – 18:00</span>
-      </div>
-    </div>
-  </div>
-</div>
 
 <div class="page-wrap">
 
@@ -370,33 +26,20 @@
     <div class="left-content">
       <div class="left-chip">🏪 Para dueños de negocios</div>
       <h1>Aparecé en el barrio <em>gratis</em> y al tiro</h1>
-      <p>Miles de personas buscan negocios cerca de donde viven. TuBarrio los conecta contigo — sin pagar publicidad, sin redes sociales complicadas.</p>
+      <p>Miles de personas buscan negocios cerca de donde viven. TuBarrio los conecta contigo — sin pagar publicidad.</p>
       <div class="benefits">
-        <div class="benefit">
-          <div class="b-ico">👀</div>
-          <div class="b-text"><strong>Más visibilidad</strong><span>Aparecés en el mapa de tu barrio y en la lista de búsqueda</span></div>
-        </div>
-        <div class="benefit">
-          <div class="b-ico">💬</div>
-          <div class="b-text"><strong>Contacto directo</strong><span>Los clientes te escriben directo por tus redes, sin intermediarios</span></div>
-        </div>
-        <div class="benefit">
-          <div class="b-ico">$0</div>
-          <div class="b-text"><strong>Completamente gratis</strong><span>El registro básico no tiene costo. Lo publicamos al tiro después de revisar.</span></div>
-        </div>
-        <div class="benefit">
-          <div class="b-ico">🔒</div>
-          <div class="b-text"><strong>Vos decidís qué mostrar</strong><span>Tu teléfono y WhatsApp solo aparecen si vos lo autorizás.</span></div>
-        </div>
+        <div class="benefit"><div class="b-ico">👀</div><div class="b-text"><strong>Más visibilidad</strong><span>Aparecés en el mapa de tu barrio</span></div></div>
+        <div class="benefit"><div class="b-ico">💬</div><div class="b-text"><strong>Contacto directo</strong><span>Clientes te escriben directo</span></div></div>
+        <div class="benefit"><div class="b-ico">$0</div><div class="b-text"><strong>Completamente gratis</strong><span>Registro sin costo</span></div></div>
       </div>
       <div class="step-indicator">
-        <div><div class="si-dot active" id="si1">1</div><div class="si-label">Info</div></div>
+        <div class="si-item"><div class="si-dot active" id="si1">1</div><div class="si-label">Info</div></div>
         <div class="si-line" id="sl1"></div>
-        <div><div class="si-dot" id="si2">2</div><div class="si-label">Horario</div></div>
+        <div class="si-item"><div class="si-dot" id="si2">2</div><div class="si-label">📸 Fotos</div></div>
         <div class="si-line" id="sl2"></div>
-        <div><div class="si-dot" id="si3">3</div><div class="si-label">Contacto</div></div>
+        <div class="si-item"><div class="si-dot" id="si3">3</div><div class="si-label">Contacto</div></div>
         <div class="si-line" id="sl3"></div>
-        <div><div class="si-dot" id="si4">4</div><div class="si-label">Confirmar</div></div>
+        <div class="si-item"><div class="si-dot" id="si4">4</div><div class="si-label">Confirmar</div></div>
       </div>
     </div>
   </div>
@@ -407,109 +50,161 @@
       <div class="progress-bar" id="progressBar" style="width:25%"></div>
     </div>
 
-    <!-- ═══ PASO 1: INFO BÁSICA ═══ -->
+    <!-- ═══ PASO 1: INFO BÁSICA + UBICACIÓN ═══ -->
     <div class="step-form active" id="step1">
       <div class="form-title">¿Cuál es tu negocio? 🏪</div>
-      <div class="form-sub">Cuéntanos lo básico. No te preocupís — podés editar esto después.</div>
+      <div class="form-sub">Contanos lo básico y tu ubicación.</div>
 
       <div class="field" id="f-nombre">
         <label>Nombre del negocio <span class="req">*</span></label>
-        <input type="text" id="inp-nombre" placeholder="Ej: Panadería Doña Rosa" oninput="updatePreview()"/>
+        <input type="text" id="inp-nombre" placeholder="Ej: Panadería Doña Rosa"/>
         <div class="err-msg">Ingresá el nombre de tu negocio</div>
       </div>
 
       <div class="field"><label>Categoría <span class="req">*</span></label></div>
       <div class="cat-grid" id="catGrid">
-        <div class="cat-opt" onclick="selectCat(this,'comida','🍽')">
-          <div class="co-ico">🍽</div><div class="co-name">Comida</div><div class="co-desc">Cocina, almuerzos, empanadas</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'panaderia','🍞')">
-          <div class="co-ico">🍞</div><div class="co-name">Panadería</div><div class="co-desc">Pan, masas, repostería</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'mini_market','🛒')">
-          <div class="co-ico">🛒</div><div class="co-name">Almacén</div><div class="co-desc">Abarrotes, botillería</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'servicios','🔧')">
-          <div class="co-ico">🔧</div><div class="co-name">Servicios</div><div class="co-desc">Gasfiter, electricista</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'belleza','✂️')">
-          <div class="co-ico">✂️</div><div class="co-name">Belleza</div><div class="co-desc">Peluquería, manicure</div>
-        </div>
-        <div class="cat-opt" onclick="selectCat(this,'emprendimiento','✨')">
-          <div class="co-ico">✨</div><div class="co-name">Emprendimiento</div><div class="co-desc">Costura, artesanía, otros</div>
-        </div>
+        <div class="cat-opt" data-cat="comida" data-ico="🍽"><div class="co-ico">🍽</div><div class="co-name">Comida</div></div>
+        <div class="cat-opt" data-cat="panaderia" data-ico="🍞"><div class="co-ico">🍞</div><div class="co-name">Panadería</div></div>
+        <div class="cat-opt" data-cat="mini_market" data-ico="🛒"><div class="co-ico">🛒</div><div class="co-name">Almacén</div></div>
+        <div class="cat-opt" data-cat="servicios" data-ico="🔧"><div class="co-ico">🔧</div><div class="co-name">Servicios</div></div>
+        <div class="cat-opt" data-cat="belleza" data-ico="✂️"><div class="co-ico">✂️</div><div class="co-name">Belleza</div></div>
+        <div class="cat-opt" data-cat="emprendimiento" data-ico="✨"><div class="co-ico">✨</div><div class="co-name">Emprendimiento</div></div>
       </div>
-      <div class="field" id="f-cat">
-        <div class="err-msg" style="display:none;margin-top:-.8rem;margin-bottom:.8rem;">Seleccioná una categoría</div>
+      <div class="field" id="f-cat"><div class="err-msg" style="display:none;margin-top:-.8rem;margin-bottom:.8rem;">Seleccioná una categoría</div></div>
+
+      <div class="field" id="f-dias">
+        <label>Días de atención <span class="req">*</span></label>
+        <div class="days-grid">
+          <button type="button" class="day-btn" data-day="Lun">Lun</button>
+          <button type="button" class="day-btn" data-day="Mar">Mar</button>
+          <button type="button" class="day-btn" data-day="Mié">Mié</button>
+          <button type="button" class="day-btn" data-day="Jue">Jue</button>
+          <button type="button" class="day-btn" data-day="Vie">Vie</button>
+          <button type="button" class="day-btn" data-day="Sáb">Sáb</button>
+          <button type="button" class="day-btn" data-day="Dom">Dom</button>
+        </div>
+        <div class="hint">Días seleccionados: <strong id="daysDisplay">ninguno</strong></div>
+        <div class="err-msg">Seleccioná al menos un día de atención</div>
       </div>
 
-      <div class="field-row">
-        <div class="field" id="f-ciudad">
-          <label>Ciudad <span class="req">*</span></label>
-          <input type="text" id="inp-ciudad" placeholder="Ej: Temuco" oninput="updatePreview(); scheduleGeo()"/>
-          <div class="err-msg">Ingresá la ciudad</div>
+      <div class="field" id="f-horario">
+        <label>Horario de atención <span class="req">*</span></label>
+        <div class="horario-wrap">
+          <input type="time" id="inp-desde" value="08:00"/>
+          <span class="horario-sep">hasta</span>
+          <input type="time" id="inp-hasta" value="18:00"/>
         </div>
-        <div class="field">
-          <label>Comuna / Barrio</label>
-          <input type="text" id="inp-comuna" placeholder="Ej: Labranza" oninput="scheduleGeo()"/>
-        </div>
+        <div class="err-msg">Ingresá el horario de atención</div>
       </div>
 
-      <div class="field" id="f-dir">
-        <label>Dirección <span class="req">*</span></label>
-        <button type="button" class="btn-gps-loc" id="btnGpsLoc" onclick="usarUbicacionActual()">
-          📍 Usar mi ubicación actual
+      <div class="field">
+        <label>¿Atendés a domicilio? 🚚</label>
+        <select id="inp-domicilio" class="domicilio-select">
+          <option value="no">🏠 No, solo en mi local</option>
+          <option value="si">🛵 Sí, voy al domicilio</option>
+          <option value="ambos">🏠🛵 Ambas opciones</option>
+        </select>
+        <div class="hint">Esto ayuda a los clientes a saber si pueden pedir delivery</div>
+      </div>
+
+      <div class="field" id="f-ubicacion">
+        <label>Ubicación de tu negocio <span class="req">*</span></label>
+        
+        <button type="button" class="btn-gps-loc" id="btnGpsLoc">
+          📍 Obtener mi ubicación actual
         </button>
-        <div class="dir-divider">o escribí la dirección</div>
-        <input type="text" id="inp-dir" placeholder="Ej: Calle Los Aromos 312" oninput="updatePreview(); scheduleGeo()"/>
-        <div class="err-msg">Ingresá la dirección o usá el botón de ubicación</div>
-        <div class="geo-wrap" id="geoWrap">
+
+        <div class="location-info-card" id="locationInfoCard" style="display:none;">
+          <div class="loc-label">📍 Ubicación detectada</div>
+          <div class="loc-value" id="locDireccion">Cargando dirección...</div>
+          <div class="loc-detail">
+            <span id="locCiudad"></span>
+            <span id="locComuna"></span>
+          </div>
+          <div style="margin-top: .6rem;">
+            <span class="location-badge" id="locBadge">✅ Ubicación GPS confirmada</span>
+          </div>
+        </div>
+
+        <div class="err-msg" id="ubicacionErr">Presioná el botón para compartir tu ubicación</div>
+
+        <div class="geo-wrap" id="geoWrap" style="display:none;">
           <div class="geo-status" id="geoStatus">
-            <span class="gs-ico">📍</span>
-            <span class="gs-text">Escribí la dirección o apretá "Usar mi ubicación actual"</span>
+            <span class="gs-ico">✅</span>
+            <span class="gs-text">Podés mover el pin para ajustar la ubicación exacta</span>
           </div>
           <div style="position:relative">
             <div id="miniMap"></div>
-            <div class="map-hint" id="mapHint" style="display:none">Arrastrá el pin para ajustar la ubicación</div>
+            <div class="map-hint" id="mapHint" style="display:none">Arrastrá el pin para ajustar</div>
           </div>
         </div>
+
         <input type="hidden" id="inp-lat" name="latitud"/>
         <input type="hidden" id="inp-lng" name="longitud"/>
+        <input type="hidden" id="inp-ciudad" name="ciudad"/>
+        <input type="hidden" id="inp-comuna" name="comuna"/>
+        <input type="hidden" id="inp-dir" name="direccion"/>
       </div>
 
-      <button class="btn-next" onclick="goStep(2)">Continuar → Horario</button>
+      <button class="btn-next" id="btnStep2">Continuar → Fotos</button>
     </div>
 
-    <!-- ═══ PASO 2: HORARIO ═══ -->
+    <!-- ═══ PASO 2: 📸 FOTOS + DESCRIPCIÓN ═══ -->
     <div class="step-form" id="step2">
-      <div class="form-title">¿Cuándo atendís? 🗓️</div>
-      <div class="form-sub">Así los clientes saben cuándo ir o contactarte.</div>
+      <div class="form-title">📸 Mostrá tu negocio</div>
+      <div class="form-sub">Mínimo 1 foto, máximo 5. ¡Los negocios con foto reciben 3x más visitas!</div>
 
-      <div class="field">
-        <label>Días de atención</label>
-        <div class="days-grid">
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Lun')">Lun</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Mar')">Mar</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Mié')">Mié</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Jue')">Jue</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Vie')">Vie</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Sáb')">Sáb</button>
-          <button type="button" class="day-btn" onclick="toggleDay(this,'Dom')">Dom</button>
+      <div class="photo-section">
+        <div class="photo-header">
+          <div class="photo-stat-badge">
+            <span>👀</span> +300% visitas con foto
+          </div>
+          <div class="photo-counter" id="photoCounter">0/5 fotos</div>
         </div>
-        <div class="hint">Días seleccionados: <strong id="daysDisplay">ninguno</strong></div>
+
+        <div class="photo-grid" id="photoGrid">
+          <div class="photo-slot" data-index="0">
+            <div class="slot-add"><span>+</span>Agregar foto</div>
+            <img style="display:none" alt="Foto 1"/>
+            <button class="remove-photo" data-index="0">✕</button>
+          </div>
+          <div class="photo-slot" data-index="1">
+            <div class="slot-add"><span>+</span>Agregar foto</div>
+            <img style="display:none" alt="Foto 2"/>
+            <button class="remove-photo" data-index="1">✕</button>
+          </div>
+          <div class="photo-slot" data-index="2">
+            <div class="slot-add"><span>+</span>Agregar foto</div>
+            <img style="display:none" alt="Foto 3"/>
+            <button class="remove-photo" data-index="2">✕</button>
+          </div>
+          <div class="photo-slot" data-index="3">
+            <div class="slot-add"><span>+</span>Agregar foto</div>
+            <img style="display:none" alt="Foto 4"/>
+            <button class="remove-photo" data-index="3">✕</button>
+          </div>
+          <div class="photo-slot" data-index="4">
+            <div class="slot-add"><span>+</span>Agregar foto</div>
+            <img style="display:none" alt="Foto 5"/>
+            <button class="remove-photo" data-index="4">✕</button>
+          </div>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" style="display:none"/>
+
+        <div class="photo-hint">
+          <span>📱</span> Puede ser del local, productos o logo
+        </div>
       </div>
 
       <div class="field">
-        <label>Horario de atención</label>
-        <div class="horario-wrap">
-          <input type="time" id="inp-desde" value="08:00" oninput="updatePreview()"/>
-          <span class="horario-sep">hasta</span>
-          <input type="time" id="inp-hasta" value="18:00" oninput="updatePreview()"/>
-        </div>
+        <label>Descripción de tu negocio <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <textarea id="inp-desc" name="descripcion" placeholder="Contanos qué hacés, qué ofrecés, qué te hace especial..." maxlength="500"></textarea>
+        <div class="desc-char-count" id="descCount">0/500</div>
+        <div class="hint">Una buena descripción ayuda a que los clientes confíen más.</div>
       </div>
 
-      <button class="btn-next" onclick="goStep(3)">Continuar → Contacto y redes</button>
-      <button class="btn-back" onclick="goStep(1)">← Volver</button>
+      <button class="btn-next" id="photoContinueBtn">Continuar → Contacto</button>
+      <button class="btn-back" id="btnBackTo1">← Volver</button>
     </div>
 
     <!-- ═══ PASO 3: CONTACTO ═══ -->
@@ -519,117 +214,167 @@
 
       <div class="visibility-notice">
         <span style="font-size:1rem;flex-shrink:0">👁</span>
-        <span>Los links que ingreses (Instagram, Facebook) <strong>serán visibles para cualquier persona</strong> que vea tu negocio en el mapa. Tu WhatsApp solo aparece si vos lo permitís.</span>
+        <span>Los links que ingreses <strong>serán visibles para cualquier persona</strong>. Tu WhatsApp solo aparece si vos lo permitís.</span>
       </div>
 
-      <!-- WhatsApp -->
       <div class="field" id="f-wsp">
         <label>WhatsApp <span class="req">*</span></label>
         <div class="red-field">
           <span class="red-icon">💬</span>
-          <input type="tel" id="inp-wsp" placeholder="+56 9 XXXX XXXX" oninput="updatePreview()"/>
+          <input type="tel" id="inp-wsp" placeholder="+56 9 XXXX XXXX"/>
         </div>
-        <div class="hint">🔒 Solo lo usamos para avisarte cuando estés aprobado. <strong>No se muestra en el mapa</strong> a menos que lo permitas abajo.</div>
+        <div class="hint">🔒 Solo para avisarte cuando estés aprobado. <strong>No se muestra</strong> sin tu permiso.</div>
         <label class="privacy-check">
-          <input type="checkbox" id="chk-wsp-pub" onchange="updatePreview()"/>
-          <span>Quiero que mi WhatsApp sea visible para los clientes en el mapa</span>
+          <input type="checkbox" id="chk-wsp-pub"/>
+          <span>Quiero que mi WhatsApp sea visible para los clientes</span>
         </label>
-        <div class="err-msg">Ingresá tu WhatsApp para poder avisarte cuando estés aprobado</div>
+        <div class="err-msg">Ingresá tu WhatsApp</div>
       </div>
 
-      <!-- Instagram -->
       <div class="field">
-        <label>Instagram <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <label>Instagram (opcional)</label>
         <div class="red-field"><span class="red-icon">📸</span><input type="text" id="inp-ig" placeholder="@tu_negocio"/></div>
-        <div class="field-public-hint">👁 Este link será público en el mapa si lo completás.</div>
+        <div class="field-public-hint">👁 Será público en el mapa.</div>
       </div>
 
-      <!-- Facebook -->
       <div class="field">
-        <label>Facebook <span style="font-size:.75rem;color:var(--dust);font-weight:400">(opcional)</span></label>
+        <label>Facebook (opcional)</label>
         <div class="red-field"><span class="red-icon">📘</span><input type="text" id="inp-fb" placeholder="facebook.com/tu-negocio"/></div>
-        <div class="field-public-hint">👁 Este link será público en el mapa si lo completás.</div>
+        <div class="field-public-hint">👁 Será público en el mapa.</div>
       </div>
 
-      <button class="btn-next" onclick="goStep(4)">Continuar → Confirmar</button>
-      <button class="btn-back" onclick="goStep(2)">← Volver</button>
+      <button class="btn-next" id="btnStep4">Continuar → Confirmar</button>
+      <button class="btn-back" id="btnBackTo2">← Volver</button>
     </div>
 
     <!-- ═══ PASO 4: CONFIRMAR ═══ -->
     <div class="step-form" id="step4">
-      <div class="form-title">¿Todo bien? Revisá tu negocio 👀</div>
-      <div class="form-sub">Así va a aparecer en TuBarrio. Lo que aparece aquí es lo que verá la gente.</div>
+      <div class="form-title">✨ ¡Tu negocio está listo!</div>
+      <div class="form-sub">Revisá cómo se verá en el mapa y confirmá.</div>
 
-      <div class="preview-card">
-        <div class="pc-head" id="pcHead" style="background:linear-gradient(135deg,#FDEBD0,#F5C99E)">🏪</div>
-        <div class="pc-body">
-          <div class="pc-name" id="pcName">Nombre de tu negocio</div>
-          <div class="pc-cat"  id="pcCat">Categoría · Ciudad</div>
-          <div class="pc-info">
-            <div class="pc-row">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-              <span id="pcDir">Dirección</span>
+      <div class="completion-checklist" id="completionChecklist">
+        <div class="check-item done" id="checkInfo">✅ Info básica</div>
+        <div class="check-item done" id="checkUbicacion">📍 Ubicación GPS</div>
+        <div class="check-item done" id="checkFotos">📸 <span id="fotosCount">0</span> fotos</div>
+        <div class="check-item done" id="checkContacto">📱 Contacto</div>
+      </div>
+
+      <div class="preview-card-enhanced" id="previewCardEnhanced">
+        <div class="pce-shine"></div>
+        
+        <div class="pce-header" id="pceHeader">
+          <div class="pce-category-tag" id="pceCategoryTag">
+            <span id="pceCatIco">🏪</span>
+            <span id="pceCatName">Categoría</span>
+          </div>
+          <div class="pce-verified-badge" id="pceVerifiedBadge" style="display:none">
+            ✓ Verificado
+          </div>
+        </div>
+
+        <div class="pce-main-photo" id="pceMainPhoto">
+          <div class="pce-photo-placeholder">
+            <span>📸</span>
+            <span>Tu foto aparecerá aquí</span>
+          </div>
+          <img id="pcePhotoImg" style="display:none" alt="Foto principal"/>
+          <button class="pce-edit-btn" id="editPhotosBtn" title="Editar fotos">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+          </button>
+        </div>
+
+        <div class="pce-body">
+          <div class="pce-title-row">
+            <h2 class="pce-name" id="pceName">Nombre del negocio</h2>
+            <button class="pce-edit-icon" id="editInfoBtn" title="Editar información">✎</button>
+          </div>
+          
+          <div class="pce-desc" id="pceDesc">Descripción del negocio</div>
+
+          <div class="pce-photo-strip" id="pcePhotoStrip"></div>
+
+          <div class="pce-details-grid">
+            <div class="pce-detail-item" id="editUbicacionBtn">
+              <div class="pce-detail-icon">📍</div>
+              <div class="pce-detail-content">
+                <div class="pce-detail-label">Ubicación</div>
+                <div class="pce-detail-value" id="pceDir">Dirección</div>
+                <div class="pce-detail-sub" id="pceCiudadComuna">Ciudad, Comuna</div>
+              </div>
+              <div class="pce-detail-edit">✎</div>
             </div>
-            <div class="pc-row">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              <span id="pcDias">Días de atención</span>
+
+            <div class="pce-detail-item" id="editHorarioBtn">
+              <div class="pce-detail-icon">🕒</div>
+              <div class="pce-detail-content">
+                <div class="pce-detail-label">Horario</div>
+                <div class="pce-detail-value" id="pceDias">Días</div>
+                <div class="pce-detail-sub" id="pceHora">Horario</div>
+              </div>
+              <div class="pce-detail-edit">✎</div>
             </div>
-            <div class="pc-row">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              <span id="pcHora">Horario</span>
-            </div>
-            <div class="pc-row" id="pcWspRow" style="display:none">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
-              <span id="pcWsp"></span>
-              <span class="pc-pub-tag">u2713 pu00fablico</span>
-            </div>
-            <div class="pc-row" id="pcIgRow" style="display:none">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="5"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg>
-              <span id="pcIg"></span>
-              <span class="pc-pub-tag">✓ público</span>
-            </div>
-            <div class="pc-row" id="pcFbRow" style="display:none">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg>
-              <span id="pcFb"></span>
-              <span class="pc-pub-tag">✓ público</span>
-            </div>
-            <div class="pc-row" id="pcGeoRow" style="display:none">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
-              <span style="color:var(--sage);font-weight:600">📍 Ubicación confirmada en el mapa</span>
+
+            <div class="pce-detail-item" id="editContactoBtn">
+              <div class="pce-detail-icon">📱</div>
+              <div class="pce-detail-content">
+                <div class="pce-detail-label">Contacto</div>
+                <div class="pce-detail-value" id="pceContacto">WhatsApp</div>
+                <div class="pce-detail-sub" id="pceRedes">Redes sociales</div>
+              </div>
+              <div class="pce-detail-edit">✎</div>
             </div>
           </div>
+
+          <div class="pce-social-links" id="pceSocialLinks"></div>
+        </div>
+      </div>
+
+      <div class="quick-actions">
+        <button class="qa-btn" id="qaEditInfo"><span>📝</span> Editar info</button>
+        <button class="qa-btn" id="qaEditPhotos"><span>📸</span> Editar fotos</button>
+        <button class="qa-btn" id="qaEditContacto"><span>📱</span> Editar contacto</button>
+      </div>
+
+      <div class="confirm-message">
+        <div class="cm-icon">🎯</div>
+        <div class="cm-text">
+          <strong>¿Todo correcto?</strong>
+          <span>Tu negocio será revisado y publicado en menos de 24 horas.</span>
         </div>
       </div>
 
       <div class="error-banner" id="errorBanner">
-        ⚠️ <span id="errorMsg">Hubo un problema al enviar. Intentá de nuevo.</span>
+        <span>⚠️</span> <span id="errorMsg">Hubo un problema al enviar.</span>
       </div>
 
       <div class="field">
-        <label style="flex-direction:row;align-items:flex-start;gap:.6rem;cursor:pointer;font-weight:400">
-          <input type="checkbox" id="chk-terms" style="width:auto;margin-top:3px;accent-color:var(--terra)"/>
-          <span style="font-size:.85rem;color:var(--dust);line-height:1.5">Acepto que TuBarrio publique esta información de mi negocio en la plataforma.</span>
+        <label class="terms-checkbox-enhanced">
+          <input type="checkbox" id="chk-terms"/>
+          <span class="terms-text">
+            <span class="terms-icon">📋</span>
+            Acepto que TuBarrio publique esta información y confirmo que los datos son correctos.
+          </span>
         </label>
       </div>
 
-      <button class="btn-next" id="submitBtn" onclick="submitForm()" style="background:var(--sage)">
-        🚀 Registrar mi negocio gratis
+      <button class="btn-next" id="submitBtn" style="background:var(--sage);">
+        <span>🚀</span> Publicar mi negocio gratis
+        <span class="btn-arrow">→</span>
       </button>
-      <button class="btn-back" onclick="goStep(3)">← Volver</button>
+      <button class="btn-back" id="btnBackTo3">← Volver a contacto</button>
     </div>
 
     <!-- SUCCESS -->
     <div class="success-screen" id="successScreen">
       <div class="success-ico">🎉</div>
-      <h2>¡Listo po! </h2>
-      <p>Recibimos el registro de tu negocio. Lo revisamos en menos de 24 horas y te avisamos cuando esté publicado en el mapa.</p>
+      <h2>¡Listo po!</h2>
+      <p>Recibimos tu negocio. Lo revisamos en menos de 24 horas.</p>
       <div class="steps-list">
-        <div class="step-item"><span class="si">✅</span><span><strong>Registro recibido</strong> — ya tenemos tu info</span></div>
-        <div class="step-item"><span class="si">🔍</span><span><strong>Revisión</strong> — verificamos los datos en 24 hrs</span></div>
-        <div class="step-item"><span class="si">📍</span><span><strong>Publicación</strong> — aparecés en el mapa del barrio</span></div>
-        <div class="step-item"><span class="si">👥</span><span><strong>Visibilidad</strong> — los vecinos te encuentran al tiro</span></div>
+        <div class="step-item"><span class="si">✅</span><span><strong>Registro recibido</strong></span></div>
+        <div class="step-item"><span class="si">🔍</span><span><strong>Revisión</strong> en 24 hrs</span></div>
+        <div class="step-item"><span class="si">📍</span><span><strong>Publicación</strong> en el mapa</span></div>
       </div>
-      <button class="btn-next" onclick="window.location.href='{% url 'index' %}'" style="max-width:300px;margin:0 auto">
+      <button class="btn-next" id="verMapaBtn">
         Ver el mapa →
       </button>
     </div>
@@ -637,395 +382,7 @@
   </div>
 </div>
 
-<script>
-/* ══ STATE ══ */
-let state = {
-  nombre:'', cat:'', catIco:'', ciudad:'', dir:'',
-  dias:[], desde:'08:00', hasta:'18:00', wsp:'',
-  lat: null, lng: null
-};
-const CAT_BG = {
-  comida:          'linear-gradient(135deg,#FDEBD0,#F5C99E)',
-  panaderia:       'linear-gradient(135deg,#F5E6C8,#EDD090)',
-  mini_market:     'linear-gradient(135deg,#D5E8D4,#A2D09E)',
-  belleza:         'linear-gradient(135deg,#F8D7DA,#F0A4AA)',
-  servicios:       'linear-gradient(135deg,#DAE8FC,#A4C4E8)',
-  emprendimiento:  'linear-gradient(135deg,#E1D5E7,#C4A8D4)',
-};
-let currentStep = 1;
-let floatVisible = true;
-
-/* ══ MINI MAPA ══ */
-let miniMap = null, miniMarker = null;
-
-function initMiniMap(lat, lng) {
-  const el = document.getElementById('miniMap');
-  el.classList.add('visible');
-  document.getElementById('mapHint').style.display = 'block';
-  if (!miniMap) {
-    miniMap = L.map('miniMap', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 16);
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-      attribution: '© OpenStreetMap © CARTO', maxZoom: 19
-    }).addTo(miniMap);
-    miniMarker = L.marker([lat, lng], { draggable: true }).addTo(miniMap);
-    miniMarker.on('dragend', e => {
-      const pos = e.target.getLatLng();
-      state.lat = pos.lat; state.lng = pos.lng;
-      document.getElementById('inp-lat').value = pos.lat;
-      document.getElementById('inp-lng').value = pos.lng;
-      setGeoStatus('ok', '✅', `Ubicación ajustada manualmente`, `${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}`);
-      updatePreview();
-    });
-  } else {
-    miniMap.setView([lat, lng], 16);
-    miniMarker.setLatLng([lat, lng]);
-    miniMap.invalidateSize();
-  }
-}
-
-/* ══ BOTÓN GPS ══ */
-function usarUbicacionActual() {
-  const btn = document.getElementById('btnGpsLoc');
-  if (!navigator.geolocation) { alert('Tu navegador no soporta GPS. Escribí la dirección manualmente.'); return; }
-  btn.disabled = true;
-  btn.innerHTML = '⏳ Obteniendo ubicación...';
-  setGeoStatus('loading', '⏳', 'Obteniendo tu ubicación...', '');
-  setGeoClass('loading');
-  navigator.geolocation.getCurrentPosition(
-    async pos => {
-      const lat = pos.coords.latitude, lng = pos.coords.longitude;
-      state.lat = lat; state.lng = lng;
-      document.getElementById('inp-lat').value = lat;
-      document.getElementById('inp-lng').value = lng;
-      initMiniMap(lat, lng);
-      setGeoStatus('ok', '✅', '¡Ubicación obtenida! Podés mover el pin para afinar.', `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-      setGeoClass('ok');
-      updatePreview();
-      btn.innerHTML = '🔍 Buscando dirección...';
-      try {
-        const url = `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lng}&format=json&accept-language=es`;
-        const res  = await fetch(url);
-        const data = await res.json();
-        if (data && data.address) {
-          const a = data.address;
-          const calle  = a.road || a.pedestrian || a.path || '';
-          const numero = a.house_number || '';
-          const ciudad = a.city || a.town || a.village || a.municipality || '';
-          const comuna = a.suburb || a.neighbourhood || a.quarter || '';
-          const dirTexto = [calle, numero].filter(Boolean).join(' ');
-          if (dirTexto) document.getElementById('inp-dir').value = dirTexto;
-          if (ciudad && !document.getElementById('inp-ciudad').value) document.getElementById('inp-ciudad').value = ciudad;
-          if (comuna && !document.getElementById('inp-comuna').value) document.getElementById('inp-comuna').value = comuna;
-          setGeoStatus('ok', '✅', dirTexto ? `Dirección autocompletada. Podés editarla si algo no está bien.` : `Ubicación guardada.`, `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-          updatePreview();
-        }
-      } catch(e) {}
-      btn.disabled = false;
-      btn.innerHTML = '✅ Ubicación guardada — apretá de nuevo para actualizar';
-    },
-    err => {
-      btn.disabled = false;
-      btn.innerHTML = '📍 Usar mi ubicación actual';
-      let msg = 'No se pudo obtener la ubicación.';
-      if (err.code === 1) msg = 'Permiso denegado. Activá la ubicación en tu navegador.';
-      if (err.code === 2) msg = 'Ubicación no disponible. Escribí la dirección manualmente.';
-      if (err.code === 3) msg = 'Tardó demasiado. Intentá de nuevo.';
-      setGeoStatus('fail', '⚠️', msg, '');
-      setGeoClass('fail');
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
-}
-
-/* ══ GEOCODIFICACIÓN ══ */
-let geoTimer = null;
-function scheduleGeo() {
-  clearTimeout(geoTimer);
-  const dir    = document.getElementById('inp-dir').value.trim();
-  const ciudad = document.getElementById('inp-ciudad').value.trim();
-  const comuna = document.getElementById('inp-comuna').value.trim();
-  if (!dir || !ciudad) return;
-  geoTimer = setTimeout(() => geocode(dir, ciudad, comuna), 900);
-}
-async function geocode(dir, ciudad, comuna) {
-  const parts = [dir]; if (comuna) parts.push(comuna); parts.push(ciudad, 'Chile');
-  const query = parts.join(', ');
-  setGeoStatus('loading', '⏳', 'Buscando ubicación...', '');
-  setGeoClass('loading');
-  try {
-    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=1&countrycodes=cl&accept-language=es`;
-    const res  = await fetch(url);
-    const data = await res.json();
-    if (data && data.length > 0) {
-      const lat = parseFloat(data[0].lat), lng = parseFloat(data[0].lon);
-      state.lat = lat; state.lng = lng;
-      document.getElementById('inp-lat').value = lat;
-      document.getElementById('inp-lng').value = lng;
-      setGeoStatus('ok', '✅', '¡Ubicación encontrada! Podés mover el pin si no es exacto.', `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-      setGeoClass('ok');
-      initMiniMap(lat, lng);
-      updatePreview();
-    } else {
-      try {
-        const url2 = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(ciudad + ', Chile')}&format=json&limit=1&countrycodes=cl&accept-language=es`;
-        const res2  = await fetch(url2);
-        const data2 = await res2.json();
-        if (data2 && data2.length > 0) {
-          const lat = parseFloat(data2[0].lat), lng = parseFloat(data2[0].lon);
-          state.lat = lat; state.lng = lng;
-          document.getElementById('inp-lat').value = lat;
-          document.getElementById('inp-lng').value = lng;
-          setGeoStatus('ok', '🏙️', 'Usamos el centro de ' + ciudad + '. Mové el pin para afinar.', `${lat.toFixed(5)}, ${lng.toFixed(5)}`);
-          setGeoClass('ok');
-          initMiniMap(lat, lng);
-          updatePreview();
-        } else {
-          setGeoStatus('fail', '❓', 'No encontramos la dirección. Podés continuar igual.', '');
-          setGeoClass('fail');
-        }
-      } catch(e) { setGeoStatus('fail', '⚠️', 'Sin conexión. Podés continuar igual.', ''); setGeoClass('fail'); }
-    }
-  } catch(e) {
-    setGeoStatus('fail', '⚠️', 'Sin conexión para geocodificar. Podés continuar igual.', '');
-    setGeoClass('fail');
-  }
-}
-function setGeoStatus(type, ico, text, coords) {
-  const el = document.getElementById('geoStatus');
-  el.innerHTML = `
-    <span class="gs-ico">${ico}</span>
-    <span class="gs-text">${text}</span>
-    ${coords ? `<span class="gs-coords">${coords}</span>` : ''}
-    ${type === 'fail' ? `<button class="btn-retry" onclick="scheduleGeo()">Reintentar</button>` : ''}`;
-}
-function setGeoClass(cls) { document.getElementById('geoWrap').className = 'geo-wrap ' + cls; }
-
-/* ══ PASOS ══ */
-function goStep(n) {
-  if (n > currentStep && !validateStep(currentStep)) return;
-  currentStep = n;
-  document.querySelectorAll('.step-form').forEach(f => f.classList.remove('active'));
-  document.getElementById('successScreen').classList.remove('active');
-  const el = document.getElementById('step' + n);
-  if (el) el.classList.add('active');
-  document.getElementById('progressBar').style.width = (n / 4 * 100) + '%';
-  for (let i = 1; i <= 4; i++) {
-    document.getElementById('si' + i).className = 'si-dot' + (i < n ? ' done' : i === n ? ' active' : '');
-    const sl = document.getElementById('sl' + i);
-    if (sl) sl.className = 'si-line' + (i < n ? ' done' : '');
-  }
-  document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
-  updatePreview();
-  const pf = document.getElementById('previewFloat');
-  if (n === 4) { pf.classList.add('hidden'); }
-  else { if (document.getElementById('inp-nombre').value.trim()) pf.classList.remove('hidden'); }
-  if (n === 1 && miniMap) setTimeout(() => miniMap.invalidateSize(), 200);
-}
-
-function validateStep(step) {
-  if (step === 1) {
-    const nombre = document.getElementById('inp-nombre').value.trim();
-    const ciudad = document.getElementById('inp-ciudad').value.trim();
-    const dir    = document.getElementById('inp-dir').value.trim();
-    const dirOk  = !!dir || state.lat !== null;
-    setErr('f-nombre', !nombre);
-    setErr('f-ciudad', !ciudad);
-    setErr('f-dir',    !dirOk);
-    const catErr = document.querySelector('#f-cat .err-msg');
-    if (!state.cat) catErr.style.display = 'block'; else catErr.style.display = 'none';
-    return !!(nombre && ciudad && dirOk && state.cat);
-  }
-  if (step === 3) {
-    const wsp = document.getElementById('inp-wsp').value.trim();
-    setErr('f-wsp', !wsp);
-    return !!wsp;
-  }
-  return true;
-}
-function setErr(id, hasErr) {
-  const f = document.getElementById(id);
-  if (!f) return;
-  f.classList.toggle('has-err', hasErr);
-  const inp = f.querySelector('input,select,textarea');
-  if (inp) inp.classList.toggle('err', hasErr);
-}
-
-/* ══ CATEGORÍA ══ */
-function selectCat(el, cat, ico) {
-  document.querySelectorAll('.cat-opt').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
-  state.cat = cat; state.catIco = ico;
-  document.querySelector('#f-cat .err-msg').style.display = 'none';
-  updatePreview();
-}
-
-/* ══ DÍAS ══ */
-function toggleDay(btn, day) {
-  btn.classList.toggle('on');
-  const idx = state.dias.indexOf(day);
-  if (idx > -1) state.dias.splice(idx, 1); else state.dias.push(day);
-  const order = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
-  state.dias.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-  document.getElementById('daysDisplay').textContent = state.dias.length ? state.dias.join(', ') : 'ninguno';
-  updatePreview();
-}
-
-/* ══ TOGGLE PREVIEW FLOTANTE ══ */
-function toggleFloat() {
-  const pf = document.getElementById('previewFloat');
-  const btn = document.getElementById('pfToggleBtn');
-  const body = pf.querySelector('.pf-body');
-  floatVisible = !floatVisible;
-  if (floatVisible) { body.style.display = ''; btn.textContent = 'ocultar'; }
-  else              { body.style.display = 'none'; btn.textContent = 'ver'; }
-}
-
-/* ══ UPDATE PREVIEW ══ */
-function updatePreview() {
-  const nombre  = document.getElementById('inp-nombre')?.value || '';
-  const ciudad  = document.getElementById('inp-ciudad')?.value || '';
-  const dir     = document.getElementById('inp-dir')?.value    || '';
-  const desde   = document.getElementById('inp-desde')?.value  || '08:00';
-  const hasta   = document.getElementById('inp-hasta')?.value  || '18:00';
-  const ig      = document.getElementById('inp-ig')?.value     || '';
-  const fb      = document.getElementById('inp-fb')?.value     || '';
-
-  const catLabel = state.cat ? cap(state.cat.replace('_', ' ')) : 'Categoría';
-  const horaText = desde + ' – ' + hasta;
-  const dirText  = dir || 'Dirección';
-  const catCity  = catLabel + (ciudad ? ' · ' + ciudad : '');
-  const bg       = CAT_BG[state.cat] || CAT_BG.comida;
-  const ico      = state.catIco || '🏪';
-
-  /* — Tarjeta paso 4 — */
-  document.getElementById('pcName').textContent = nombre || 'Nombre de tu negocio';
-  document.getElementById('pcCat').textContent  = catCity;
-  document.getElementById('pcDir').textContent  = dirText;
-  document.getElementById('pcDias').textContent = state.dias.length ? state.dias.join(', ') : 'Días de atención';
-  document.getElementById('pcHora').textContent = horaText;
-  const pcHead = document.getElementById('pcHead');
-  if (pcHead) { pcHead.style.background = bg; pcHead.textContent = ico; }
-
-  const wspPub = document.getElementById('chk-wsp-pub')?.checked || false;
-  const wsp = document.getElementById('inp-wsp')?.value || '';
-  const wspRow = document.getElementById('pcWspRow');
-  if (wspRow) { if (wspPub && wsp) { wspRow.style.display = 'flex'; document.getElementById('pcWsp').textContent = wsp; } else { wspRow.style.display = 'none'; } }
-  const igRow = document.getElementById('pcIgRow');
-  if (igRow) { if (ig) { igRow.style.display = 'flex'; document.getElementById('pcIg').textContent = ig; } else { igRow.style.display = 'none'; } }
-  const fbRow = document.getElementById('pcFbRow');
-  if (fbRow) { if (fb) { fbRow.style.display = 'flex'; document.getElementById('pcFb').textContent = fb; } else { fbRow.style.display = 'none'; } }
-  const pcGeoRow = document.getElementById('pcGeoRow');
-  if (pcGeoRow) pcGeoRow.style.display = state.lat ? 'flex' : 'none';
-
-  /* — Preview flotante — */
-  const pfHead = document.getElementById('pfHead');
-  if (pfHead) {
-    pfHead.style.background = bg;
-    let textNode = null;
-    pfHead.childNodes.forEach(n => { if (n.nodeType === 3) textNode = n; });
-    if (textNode) textNode.textContent = ico;
-    else pfHead.insertBefore(document.createTextNode(ico), pfHead.firstChild);
-  }
-  document.getElementById('pfName').textContent = nombre || 'Nombre de tu negocio';
-  document.getElementById('pfCat').textContent  = catCity;
-  document.getElementById('pfDir').textContent  = dirText;
-  document.getElementById('pfHora').textContent = horaText;
-  const pfGeoRow = document.getElementById('pfGeoRow');
-  if (pfGeoRow) pfGeoRow.style.display = state.lat ? 'flex' : 'none';
-
-  const pf = document.getElementById('previewFloat');
-  if (currentStep !== 4) {
-    if (nombre.trim()) pf.classList.remove('hidden');
-    else pf.classList.add('hidden');
-  }
-}
-
-/* ══ SUBMIT ══ */
-async function submitForm() {
-  if (!document.getElementById('chk-terms').checked) {
-    showToast('Aceptá los términos para continuar 👆');
-    return;
-  }
-  document.getElementById('errorBanner').classList.remove('show');
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Enviando...';
-
-  const desde = document.getElementById('inp-desde').value || '08:00';
-  const hasta = document.getElementById('inp-hasta').value || '18:00';
-  const diasStr = state.dias.length ? state.dias.join(', ') : 'A convenir';
-  const diasAtencion = diasStr + ' · ' + desde + '–' + hasta;
-
-  const ciudad = document.getElementById('inp-ciudad').value.trim();
-  const comuna = document.getElementById('inp-comuna').value.trim();
-  const dir = document.getElementById('inp-dir').value.trim();
-  const dirCompleta = [dir, comuna, ciudad].filter(Boolean).join(', ');
-
-  const payload = new URLSearchParams({
-    csrfmiddlewaretoken: document.querySelector('meta[name="csrf-token"]').content,
-    nombre:       document.getElementById('inp-nombre').value.trim(),
-    tipo:         state.cat || 'emprendimiento',
-    direccion:    dirCompleta,
-    ciudad:       ciudad,
-    comuna:       comuna,
-    dias_atencion: diasAtencion,
-    whatsapp:     document.getElementById('inp-wsp').value.trim(),
-    wsp_publico:  document.getElementById('chk-wsp-pub').checked ? 'si' : 'no',
-    instagram:    document.getElementById('inp-ig').value.trim(),
-    facebook:     document.getElementById('inp-fb').value.trim(),
-    latitud:      state.lat ?? '',
-    longitud:     state.lng ?? '',
-  });
-
-  try {
-    const res = await fetch(window.location.href, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: payload.toString(),
-    });
-    if (res.ok) {
-      document.getElementById('step4').classList.remove('active');
-      document.getElementById('progressBar').style.width = '100%';
-      for (let i = 1; i <= 4; i++) {
-        document.getElementById('si' + i).className = 'si-dot done';
-        const sl = document.getElementById('sl' + i);
-        if (sl) sl.className = 'si-line done';
-      }
-      document.getElementById('successScreen').classList.add('active');
-      document.getElementById('previewFloat').classList.add('hidden');
-      document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
-    } else {
-      document.getElementById('errorMsg').textContent = 'Error del servidor (' + res.status + '). Intentá de nuevo.';
-      document.getElementById('errorBanner').classList.add('show');
-      btn.disabled = false;
-      btn.innerHTML = '🚀 Registrar mi negocio gratis';
-    }
-  } catch (e) {
-    document.getElementById('errorMsg').textContent = 'Sin conexión. Revisá tu internet.';
-    document.getElementById('errorBanner').classList.add('show');
-    btn.disabled = false;
-    btn.innerHTML = '🚀 Registrar mi negocio gratis';
-  }
-}
-
-/* ══ TOAST ══ */
-let toastTimer;
-function showToast(msg) {
-  clearTimeout(toastTimer);
-  let t = document.getElementById('_toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = '_toast';
-    t.style.cssText = 'position:fixed;bottom:1.5rem;left:50%;transform:translateX(-50%) translateY(16px);background:#241A10;color:#F6F1E9;padding:.65rem 1.4rem;border-radius:100px;font-size:.85rem;font-weight:500;z-index:9999;opacity:0;transition:all .3s;white-space:nowrap;pointer-events:none';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.opacity = '1'; t.style.transform = 'translateX(-50%) translateY(0)';
-  toastTimer = setTimeout(() => { t.style.opacity = '0'; t.style.transform = 'translateX(-50%) translateY(16px)'; }, 3200);
-}
-
-const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
-updatePreview();
-</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="{% static 'js/negocio.js' %}"></script>
 </body>
 </html>

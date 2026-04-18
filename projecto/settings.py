@@ -42,6 +42,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     'rest_framework',
+    'cloudinary', 
+    'cloudinary_storage', 
     'tubarrio',
 
 ]
@@ -84,13 +86,28 @@ WSGI_APPLICATION = 'projecto.wsgi.application'
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
 
+# Configuración base de la base de datos
 DATABASES = {
     'default': dj_database_url.parse(
         'postgresql://tubarrio_db_user:u6u8uRFVmbjqP6jx1fcbv2yf28pp5cON@dpg-d74ni2haae7s73bkplcg-a.oregon-postgres.render.com/tubarrio_db'
     )
 }
 
-DATABASES['default']['sslmode'] = 'require'
+# ─── CONNECTION POOLING PARA POSTGRESQL ─────────────────────────────────
+DATABASES['default']['CONN_MAX_AGE'] = 600  # 10 minutos
+
+# Actualizar o crear OPTIONS (dj_database_url ya puede tener algunas)
+if 'OPTIONS' not in DATABASES['default']:
+    DATABASES['default']['OPTIONS'] = {}
+
+DATABASES['default']['OPTIONS'].update({
+    'connect_timeout': 5,
+    'sslmode': 'require',
+    'keepalives': 1,
+    'keepalives_idle': 30,
+    'keepalives_interval': 10,
+    'keepalives_count': 5,
+})
 
 
 # Password validation
@@ -117,119 +134,194 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'es-es'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Santiago'
 
 USE_I18N = True
 
 USE_TZ = True
 
 
+
+import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+
+# ─── CLOUDINARY CONFIGURATION ────────────────────────────────────────────────
+# En desarrollo local usa estos valores, en Render usa variables de entorno
+CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'katiuska')
+CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '424475881119632')
+CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', 'U8ajQxioKkbRDL3qk5AA8--5yVM')
+
+# Configurar cloudinary
+cloudinary.config(
+    cloud_name=CLOUDINARY_CLOUD_NAME,
+    api_key=CLOUDINARY_API_KEY,
+    api_secret=CLOUDINARY_API_SECRET,
+    secure=True
+)
+
+# Configuración para django-cloudinary-storage
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
+    'API_KEY': CLOUDINARY_API_KEY,
+    'API_SECRET': CLOUDINARY_API_SECRET,
+    'STATIC_IMAGES_QUALITY': 'auto:eco', 
+    'STATIC_IMAGES_FORMAT': 'auto',      
+}
+
+# Usar Cloudinary para archivos media
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
 
 STATIC_URL = '/static/'
-
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 STATICFILES_DIRS = [
-    BASE_DIR / "static",
+    BASE_DIR / 'static',
 ]
-
-STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+# Media files - USANDO CLOUDINARY
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+# URLs de media (ya no se usa MEDIA_ROOT ni MEDIA_URL porque Cloudinary lo maneja)
+MEDIA_URL = '/media/'  # Esto será manejado por Cloudinary
+MEDIA_ROOT = BASE_DIR / 'media'  # Solo para desarrollo local
+
+
+# ─── CHANNELS (WebSockets) ───────────────────────────────────────────────────
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels_redis.core.RedisChannelLayer",
-        "CONFIG": {
-            "hosts": [("127.0.0.1", 6379)],
-        },
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
     }
 }
 
 
+# ─── CACHÉ OPTIMIZADO ────────────────────────────────────────────────────────
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'tubarrio_cache',
+        'TIMEOUT': 600,  # 10 minutos
+        'OPTIONS': {
+            'MAX_ENTRIES': 5000,
+        }
+    }
+}
+
+
+# ─── JAZZMIN SETTINGS (Diseño optimizado) ────────────────────────────────────
 JAZZMIN_SETTINGS = {
-    # ── Identidad ──────────────────────────────────────────
+    # Identidad
     "site_title": "TuBarrio Admin",
     "site_header": "TuBarrio",
     "site_brand": "📍 TuBarrio",
-    "site_logo": None,  # pon "img/logo.png" si tienes logo en static
+    "site_logo": None,
     "welcome_sign": "Bienvenido al panel de TuBarrio 🏘️",
     "copyright": "TuBarrio — Loncoche © 2026",
 
-    # ── Íconos del menú lateral ────────────────────────────
+    # Tema y modo oscuro
+    "default_theme_mode": "dark",
+    
+    # Selector de idiomas
+    "language_chooser": False,
+
+    # Íconos del menú lateral
     "icons": {
-        "auth":                     "fas fa-users-cog",
-        "auth.user":                "fas fa-user",
-        "auth.Group":               "fas fa-users",
-        "tubarrio.Negocio":         "fas fa-store",
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "tubarrio.Negocio": "fas fa-store",
+        "tubarrio.ImagenNegocio": "fas fa-image",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
 
-    # ── Menú lateral ──────────────────────────────────────
+    # Menú lateral
     "order_with_respect_to": ["tubarrio", "auth"],
-
-    # ── Navegación superior (links rápidos) ───────────────
+    
+    # Navegación superior
     "topmenu_links": [
-        {"name": "Inicio",       "url": "admin:index",         "permissions": ["auth.view_user"]},
-        {"name": "Ver sitio",    "url": "/",                   "new_window": True},
-        {"name": "+ Negocio",    "url": "admin:tubarrio_negocio_add"},
+        {"name": "Inicio", "url": "admin:index"},
+        {"name": "Ver sitio", "url": "/", "new_window": True},
+        {"name": "+ Agregar Negocio", "url": "admin:tubarrio_negocio_add", "icon": "fas fa-plus"},
     ],
 
-    # ── Barra de usuario (arriba a la derecha) ────────────
+    # Barra de usuario
     "usermenu_links": [
-        {"name": "Ver sitio",    "url": "/", "new_window": True, "icon": "fas fa-globe"},
+        {"name": "Ver sitio", "url": "/", "new_window": True, "icon": "fas fa-globe"},
     ],
 
-    # ── UI ────────────────────────────────────────────────
-    "show_sidebar":             True,
-    "navigation_expanded":      True,
-    "hide_apps":                [],
-    "hide_models":              [],
-    "related_modal_active":     True,
-    "custom_css":               "css/tubarrio_admin.css",  # tu CSS custom (ver abajo)
-    "custom_js":                None,
-    "use_google_fonts_cdn":     True,
-    "show_ui_builder":          False,   # ponlo True para editar en vivo y copiar config
-    "changeform_format":        "horizontal_tabs",  # tabs en el formulario de edición
-    "changeform_format_overrides": {
-        "auth.user":  "collapsible",
-        "auth.group": "vertical_tabs",
-    },
+    # UI - OPTIMIZADA
+    "show_sidebar": True,
+    "navigation_expanded": False,
+    "hide_apps": [],
+    "hide_models": ["tubarrio.ImagenNegocio"],
+    "related_modal_active": False,
+    "custom_css": None,
+    "custom_js": None,
+    "use_google_fonts_cdn": True,
+    "show_ui_builder": False,
+    "changeform_format": "horizontal_tabs",
 }
 
 JAZZMIN_UI_TWEAKS = {
-    # ── Tema base ─────────────────────────────────────────
-    "navbar_small_text":        False,
-    "footer_small_text":        False,
-    "body_small_text":          False,
-    "brand_small_text":         False,
-
-    # ── Colores AdminLTE que Jazzmin expone ───────────────
-    "brand_colour":             "navbar-dark",
-    "accent":                   "accent-warning",      # ámbar para links activos
-    "navbar":                   "navbar-dark",
-    "no_navbar_border":         True,
-    "navbar_fixed":             True,
-    "layout_boxed":             False,
-    "footer_fixed":             False,
-    "sidebar_fixed":            True,
-    "sidebar":                  "sidebar-dark-warning", # sidebar oscuro + acento ámbar
-    "sidebar_nav_small_text":   False,
-    "sidebar_disable_expand":   False,
+    "navbar_small_text": False,
+    "footer_small_text": False,
+    "body_small_text": False,
+    "brand_small_text": False,
+    "brand_colour": "navbar-dark",
+    "accent": "accent-warning",
+    "navbar": "navbar-dark",
+    "no_navbar_border": True,
+    "navbar_fixed": True,
+    "layout_boxed": False,
+    "footer_fixed": False,
+    "sidebar_fixed": True,
+    "sidebar": "sidebar-dark-warning",
+    "sidebar_nav_small_text": False,
+    "sidebar_disable_expand": False,
     "sidebar_nav_child_indent": True,
-    "sidebar_nav_compact_style":False,
+    "sidebar_nav_compact_style": False,
     "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style":   False,
-    "theme":                    "darkly",              # tema oscuro base (Bootstrap)
-    "dark_mode_theme":          "darkly",
+    "sidebar_nav_flat_style": False,
+    "theme": "darkly",
     "button_classes": {
-        "primary":   "btn-primary",
+        "primary": "btn-primary",
         "secondary": "btn-secondary",
-        "info":      "btn-info",
-        "warning":   "btn-warning",
-        "danger":    "btn-danger",
-        "success":   "btn-success",
+        "info": "btn-info",
+        "warning": "btn-warning",
+        "danger": "btn-danger",
+        "success": "btn-success",
     },
-    "actions_sticky_top":       True,
+    "actions_sticky_top": True,
 }
+
+
+# ─── REST FRAMEWORK ──────────────────────────────────────────────────────────
+REST_FRAMEWORK = {
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 50,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+
+# ─── DATA UPLOAD LIMITS ──────────────────────────────────────────────────────
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB para imágenes
+
+
+# ─── SECURITY (para producción) ──────────────────────────────────────────────
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

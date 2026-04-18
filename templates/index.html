@@ -5,7 +5,9 @@
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <meta name="theme-color" content="#FDFAF4"/>
-  <title>TuBarrio  — Descubre lo que hay en tu barrio</title>
+  <meta name="description" content="Negocios locales  - Descubre emprendimientos cerca de ti">
+  <meta property="og:title" content="TuBarrio">  
+  <title>TuBarrio — Descubre lo que hay en tu barrio</title>
 
   <link rel="preconnect" href="https://unpkg.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
@@ -91,14 +93,29 @@
 <!-- STATUS (errores / carga) -->
 <div class="statusbar" id="statusBar" aria-live="polite" aria-atomic="true"></div>
 
-<!-- MODAL -->
+<!-- MODAL CON PESTAÑAS -->
 <div class="modal-ov" id="detailModal" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="m-banner" id="mBanner"></div>
     <div class="m-body">
       <div class="m-name" id="mName"></div>
       <div class="m-catl" id="mCat"></div>
-      <div class="m-info" id="mInfo"></div>
+      
+      <!-- PESTAÑAS -->
+      <div class="m-tabs">
+        <button class="m-tab active" id="tabDetalles" onclick="switchTab('detalles')">📋 Detalles</button>
+        <button class="m-tab" id="tabFotos" onclick="switchTab('fotos')">📸 Fotos <span class="m-tab-count" id="fotosCount">0</span></button>
+      </div>
+      
+      <!-- CONTENIDO DE PESTAÑAS -->
+      <div class="m-tab-content active" id="contentDetalles">
+      <div class="m-info" id="mInfo" style="display:flex;flex-direction:column;gap:12px;"></div>
+      </div>
+      
+      <div class="m-tab-content" id="contentFotos">
+        <div id="mGallery"></div>
+      </div>
+      
       <div class="m-actions" id="mActions"></div>
     </div>
   </div>

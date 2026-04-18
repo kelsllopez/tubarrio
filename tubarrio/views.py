@@ -13,11 +13,15 @@ from django.utils.dateparse import parse_datetime
 from django.core.cache import cache
 from django.db import connection
 from django.db import models
-from .models import Negocio, GeocodeCache
+from .models import Negocio, ImagenNegocio
 from .rate_limit import is_rate_limited
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from .serializers import NegocioSerializer
+
+
+# Cache simple en memoria para geocodificación (opcional, puedes usar Django cache)
+_geocode_memory_cache = {}
 
 
 def _geocode_cache_key(direccion: str, comuna: str, ciudad: str) -> str:
@@ -25,32 +29,42 @@ def _geocode_cache_key(direccion: str, comuna: str, ciudad: str) -> str:
     return hashlib.sha256(raw.encode('utf-8')).hexdigest()[:64]
 
 
-# ── Geocodificación automática con Nominatim + cache en BD ───────────────────
 def geocode(direccion, comuna='', ciudad='Chile'):
-    """Convierte dirección en lat/lng usando OpenStreetMap Nominatim (con cache)."""
+    """
+    Convierte dirección en lat/lng usando OpenStreetMap Nominatim.
+    Usa caché en memoria y caché de Django.
+    """
     clave = _geocode_cache_key(direccion, comuna, ciudad)
-    try:
-        cached = GeocodeCache.objects.only('latitud', 'longitud').get(clave=clave)
-        return cached.latitud, cached.longitud
-    except GeocodeCache.DoesNotExist:
-        pass
+    
+    # Intentar desde caché de Django
+    cached = cache.get(f'geocode_{clave}')
+    if cached:
+        return cached['lat'], cached['lng']
+    
+    # Intentar desde caché en memoria
+    if clave in _geocode_memory_cache:
+        lat, lng = _geocode_memory_cache[clave]
+        cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)  # 30 días
+        return lat, lng
 
+    # Geocodificar con Nominatim
     texto = ', '.join(filter(None, [direccion, comuna, ciudad]))
     query = urllib.parse.quote(texto)
     url = f'https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1'
     req = urllib.request.Request(url, headers={'User-Agent': 'TuBarrio/1.0'})
+    
     try:
         with urllib.request.urlopen(req, timeout=4) as r:
             data = json.loads(r.read())
             if data:
                 lat, lng = float(data[0]['lat']), float(data[0]['lon'])
-                GeocodeCache.objects.update_or_create(
-                    clave=clave,
-                    defaults={'latitud': lat, 'longitud': lng},
-                )
+                # Guardar en caché
+                _geocode_memory_cache[clave] = (lat, lng)
+                cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)
                 return lat, lng
     except Exception:
         pass
+    
     return None, None
 
 
@@ -72,13 +86,19 @@ CAT_COLORES = {
     'emprendimiento': '#9B59B6',
 }
 
-# bbox máximo ~2° (~220 km en latitud media Chile) para evitar queries enormes
+DOMICILIO_LABELS = {
+    'no': 'No, solo en mi local',
+    'si': 'Sí, voy al domicilio',
+    'ambos': 'Ambas opciones',
+}
+
 BBOX_MAX_SPAN_DEG = 2.0
 API_MAX_LIMIT = 2000
 API_DEFAULT_LIMIT = 500
 
 
 def _negocio_dict(n, include_updated: bool = True):
+    """Convierte un diccionario de negocio al formato esperado por el frontend"""
     d = {
         'id': n['id'],
         'nombre': n['nombre'],
@@ -86,11 +106,19 @@ def _negocio_dict(n, include_updated: bool = True):
         'color': CAT_COLORES.get(n['tipo'], '#888888'),
         'dir': n['direccion'],
         'dias': n['dias_atencion'] or '',
+        'domicilio': n.get('domicilio', 'no'),
+        'domicilio_label': DOMICILIO_LABELS.get(n.get('domicilio', 'no'), 'No especificado'),
         'whatsapp': n['whatsapp'] or '',
         'instagram': n['instagram'] or '',
         'facebook': n['facebook'] or '',
         'lat': n['latitud'],
         'lng': n['longitud'],
+        'comuna': n.get('comuna') or '',
+        'ciudad': n.get('ciudad') or 'Chile',
+        'verificado': n.get('verificado', False),
+        'visitas': n.get('visitas', 0),
+        'descripcion': n.get('descripcion') or '',
+        'imagenes': n.get('imagenes', []),
     }
     if include_updated and 'fecha_modificacion' in n:
         fm = n['fecha_modificacion']
@@ -120,51 +148,58 @@ def _parse_bbox(bbox: str):
 
 # ── Vista principal — mapa ────────────────────────────────────────────────────
 def index(request):
-    qs = (
-        Negocio.objects.filter(estado='aprobado')
-        .order_by('-fecha_creacion')
-        .values(
-            'id',
-            'nombre',
-            'tipo',
-            'direccion',
-            'dias_atencion',
-            'whatsapp',
-            'instagram',
-            'facebook',
-            'latitud',
-            'longitud',
-            'fecha_modificacion',
-        )
-    )
-
+    """Vista principal que muestra el mapa con todos los negocios aprobados"""
+    negocios_qs = Negocio.objects.filter(estado='aprobado').prefetch_related('imagenes').order_by('-fecha_creacion')
+    
+    # Preparar datos para JSON
+    negocios_data = []
+    for negocio in negocios_qs:
+        # Obtener URLs absolutas completas de imágenes
+        imagenes = []
+        for img in negocio.imagenes.all():
+            img_url = img.imagen.url
+            if img_url.startswith('/'):
+                img_url = request.build_absolute_uri(img_url)
+            imagenes.append(img_url)
+        
+        negocios_data.append({
+            'id': negocio.id,
+            'nombre': negocio.nombre,
+            'tipo': negocio.tipo,
+            'direccion': negocio.direccion,
+            'dias_atencion': negocio.dias_atencion,
+            'domicilio': negocio.domicilio,
+            'whatsapp': negocio.whatsapp,
+            'instagram': negocio.instagram,
+            'facebook': negocio.facebook,
+            'latitud': negocio.latitud,
+            'longitud': negocio.longitud,
+            'fecha_modificacion': negocio.fecha_modificacion,
+            'comuna': negocio.comuna,
+            'ciudad': negocio.ciudad,
+            'verificado': negocio.verificado,
+            'visitas': negocio.visitas,
+            'descripcion': negocio.descripcion,
+            'imagenes': imagenes,
+        })
+    
+    # Convertir a formato del frontend usando _negocio_dict
+    negocios_formateados = [_negocio_dict(n, True) for n in negocios_data]
+    
     negocios_json = json.dumps(
-        [_negocio_dict(n, True) for n in qs],
+        negocios_formateados,
         ensure_ascii=False,
+        default=str
     )
 
-    return render(request, '1.html', {'negocios_json': negocios_json})
+    return render(request, 'index.html', {'negocios_json': negocios_json})
 
 
-# ── API JSON (polling, incremental, cursor, filtros) ─────────────────────────
-#
-# GET /api/negocios/
-#
-# Query params:
-#   cat              — categoría (tipo) o 'all'
-#   q                — texto en nombre o dirección (icontains)
-#   limit            — máximo de filas (1..2000, default 500)
-#   bbox             — minLng,minLat,maxLng,maxLat (span máx ~2° por lado)
-#   updated_since    — ISO8601: solo negocios con fecha_modificacion > fecha
-#   after_id         — paginación estable: id mayor que este, orden por id asc
-#   meta=1           — respuesta { results, count, next_after_id, has_more }
-#
-# Cabeceras respuesta: ETag, Last-Modified, X-Total-Count
-# Si If-None-Match coincide con ETag → 304 (salvo meta=1)
-#
+# ── API JSON ──────────────────────────────────────────────────────────────────
 @require_GET
 @cache_control(no_cache=True)
 def api_negocios(request):
+    """API para polling y actualizaciones en tiempo real"""
     if is_rate_limited(request, 'api_negocios', limit=180, window_seconds=60):
         return JsonResponse({'error': 'Demasiadas solicitudes. Intenta en unos segundos.'}, status=429)
 
@@ -176,7 +211,8 @@ def api_negocios(request):
     after_id_raw = (request.GET.get('after_id') or '').strip()
     meta = (request.GET.get('meta') or '').strip() in ('1', 'true', 'yes')
 
-    qs = Negocio.objects.filter(estado='aprobado')
+    qs = Negocio.objects.filter(estado='aprobado').prefetch_related('imagenes')
+    
     if cat and cat != 'all':
         qs = qs.filter(tipo=cat)
     if q:
@@ -193,13 +229,11 @@ def api_negocios(request):
     bbox_parsed = _parse_bbox(bbox) if bbox else None
     if bbox:
         if bbox_parsed is None:
-            return JsonResponse({'error': 'bbox inválido o demasiado grande (max ~2° por lado).'}, status=400)
+            return JsonResponse({'error': 'bbox inválido o demasiado grande'}, status=400)
         min_lng, min_lat, max_lng, max_lat = bbox_parsed
         qs = qs.filter(
-            latitud__gte=min_lat,
-            latitud__lte=max_lat,
-            longitud__gte=min_lng,
-            longitud__lte=max_lng,
+            latitud__gte=min_lat, latitud__lte=max_lat,
+            longitud__gte=min_lng, longitud__lte=max_lng,
         )
 
     use_cursor = bool(after_id_raw)
@@ -217,68 +251,69 @@ def api_negocios(request):
     if limit_raw:
         try:
             limit = int(limit_raw)
-            if limit < 1:
-                limit = API_DEFAULT_LIMIT
-            limit = min(limit, API_MAX_LIMIT)
+            limit = max(1, min(limit, API_MAX_LIMIT))
         except ValueError:
             limit = API_DEFAULT_LIMIT
 
-    qs = qs.values(
-        'id',
-        'nombre',
-        'tipo',
-        'direccion',
-        'dias_atencion',
-        'whatsapp',
-        'instagram',
-        'facebook',
-        'latitud',
-        'longitud',
-        'fecha_creacion',
-        'fecha_modificacion',
-    )[:limit]
+    negocios = qs[:limit]
+    
+    data = []
+    for negocio in negocios:
+        imagenes = []
+        for img in negocio.imagenes.all():
+            img_url = img.imagen.url
+            if img_url.startswith('/'):
+                img_url = request.build_absolute_uri(img_url)
+            imagenes.append(img_url)
+        
+        data.append({
+            'id': negocio.id,
+            'nombre': negocio.nombre,
+            'tipo': negocio.tipo,
+            'direccion': negocio.direccion,
+            'dias_atencion': negocio.dias_atencion,
+            'domicilio': negocio.domicilio,
+            'whatsapp': negocio.whatsapp,
+            'instagram': negocio.instagram,
+            'facebook': negocio.facebook,
+            'latitud': negocio.latitud,
+            'longitud': negocio.longitud,
+            'fecha_modificacion': negocio.fecha_modificacion,
+            'comuna': negocio.comuna,
+            'ciudad': negocio.ciudad,
+            'verificado': negocio.verificado,
+            'visitas': negocio.visitas,
+            'descripcion': negocio.descripcion,
+            'imagenes': imagenes,
+        })
+    
+    formatted_data = [_negocio_dict(n, True) for n in data]
 
-    rows = list(qs)
-    data = [_negocio_dict(n, True) for n in rows]
-
+    # Generar ETag para cache
     etag_src = '|'.join(
-        f"{n['id']}:{(n['fecha_modificacion'].timestamp() if n.get('fecha_modificacion') else 0):.3f}"
-        for n in rows
+        f"{n['id']}:{n['fecha_modificacion'].timestamp() if n.get('fecha_modificacion') else 0:.3f}"
+        for n in data
     )
     etag = '"' + hashlib.sha256(etag_src.encode('utf-8')).hexdigest()[:16] + '"'
+
     if request.headers.get('If-None-Match') == etag and not meta:
-        resp = JsonResponse([], safe=False)
-        resp.status_code = 304
+        resp = HttpResponse(status=304)
         resp['ETag'] = etag
         return resp
 
-    cache_key = f"api_negocios:{etag}:{cat}:{q}:{limit_raw}:{bbox}:{updated_since_raw}:{after_id_raw}:m{int(meta)}"
-    if not meta:
-        cached = cache.get(cache_key)
-        if cached is not None:
-            resp = JsonResponse(cached, safe=False)
-            resp['ETag'] = etag
-            return resp
-
-    payload = data
     if meta:
-        payload = {
-            'results': data,
-            'count': len(data),
-            'next_after_id': rows[-1]['id'] if rows else None,
-            'has_more': len(rows) >= limit,
-        }
+        payload = {'results': formatted_data, 'count': len(formatted_data)}
+        resp = JsonResponse(payload)
+    else:
+        resp = JsonResponse(formatted_data, safe=False)
 
-    if not meta:
-        cache.set(cache_key, data, 15)
-    resp = JsonResponse(payload, safe=isinstance(payload, list))
     resp['ETag'] = etag
     resp['Last-Modified'] = http_date(now().timestamp())
-    resp['X-Total-Count'] = str(len(data))
+    resp['Access-Control-Allow-Origin'] = '*'
     return resp
 
 
-# ── Health check (despliegue / monitoreo) ──────────────────────────────────────
+# ── Health check ──────────────────────────────────────────────────────────────
 @require_GET
 def healthz(request):
     """GET /api/healthz/ — DB y app vivos."""
@@ -288,14 +323,12 @@ def healthz(request):
     except Exception:
         ok = False
     status = 200 if ok else 503
-    return JsonResponse(
-        {'ok': ok, 'service': 'tubarrio'},
-        status=status,
-    )
+    return JsonResponse({'ok': ok, 'service': 'tubarrio'}, status=status)
 
 
 # ── Formulario de registro ────────────────────────────────────────────────────
 def ingresa_tu_negocio(request):
+    """Vista para registrar un nuevo negocio"""
     if request.method == 'POST':
         if is_rate_limited(request, 'ingresa_negocio', limit=10, window_seconds=3600):
             return HttpResponse(
@@ -304,13 +337,34 @@ def ingresa_tu_negocio(request):
                 content_type='text/plain; charset=utf-8',
             )
 
+        # Datos básicos
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
         direccion = request.POST.get('direccion', '').strip()
         comuna = request.POST.get('comuna', '').strip()
         ciudad = request.POST.get('ciudad', 'Chile').strip()
-
+        dias_atencion = request.POST.get('dias_atencion', '').strip()
+        
+        # Domicilio
+        domicilio = request.POST.get('domicilio', 'no').strip()
+        if domicilio not in ['no', 'si', 'ambos']:
+            domicilio = 'no'
+        
+        # Tipo
+        tipo_recibido = request.POST.get('tipo', '').strip()
+        tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
+        
+        # Contacto
+        wsp_publico = request.POST.get('wsp_publico', 'no').strip()
+        whatsapp_raw = request.POST.get('whatsapp', '').strip() or None
+        whatsapp = whatsapp_raw if wsp_publico == 'si' else None
+        
+        instagram = request.POST.get('instagram', '').strip() or None
+        facebook = request.POST.get('facebook', '').strip() or None
+        
+        # Ubicación
         lat_raw = request.POST.get('latitud', '').strip()
         lng_raw = request.POST.get('longitud', '').strip()
-
         try:
             latitud = float(lat_raw) if lat_raw else None
             longitud = float(lng_raw) if lng_raw else None
@@ -320,36 +374,41 @@ def ingresa_tu_negocio(request):
         if latitud is None or longitud is None:
             latitud, longitud = geocode(direccion, comuna, ciudad)
 
-        tipo_recibido = request.POST.get('tipo', '').strip()
-        tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
-
-        wsp_publico = request.POST.get('wsp_publico', 'no').strip()
-        whatsapp_raw = request.POST.get('whatsapp', '').strip() or None
-        whatsapp = whatsapp_raw if wsp_publico == 'si' else None
-
-        instagram_raw = request.POST.get('instagram', '').strip() or None
-        facebook_raw = request.POST.get('facebook', '').strip() or None
-
-        Negocio.objects.create(
-            nombre=request.POST.get('nombre', '').strip(),
+        # Crear negocio
+        negocio = Negocio.objects.create(
+            nombre=nombre,
             tipo=tipo,
+            descripcion=descripcion,
             direccion=direccion,
-            dias_atencion=request.POST.get('dias_atencion', '').strip(),
-            whatsapp=whatsapp,
-            instagram=instagram_raw,
-            facebook=facebook_raw,
             comuna=comuna,
             ciudad=ciudad or 'Chile',
             latitud=latitud,
             longitud=longitud,
+            dias_atencion=dias_atencion,
+            domicilio=domicilio,
+            whatsapp=whatsapp,
+            instagram=instagram,
+            facebook=facebook,
             estado='pendiente',
         )
+        
+        # Guardar imágenes
+        for key, file in request.FILES.items():
+            if key.startswith('imagen_'):
+                ImagenNegocio.objects.create(
+                    negocio=negocio,
+                    imagen=file
+                )
+        
+        # Limpiar caché del dashboard
+        cache.delete('dashboard_stats')
+        
         return redirect('index')
 
     return render(request, 'negocio.html')
 
 
-# ── ViewSet DRF ───────────────────────────────────────────────────────────────
+# ─── ViewSet DRF ───────────────────────────────────────────────────────────────
 class NegocioPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = 'page_size'
