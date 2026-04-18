@@ -29,69 +29,135 @@ const DOMICILIO_TEXTO = {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
-/* 📸 MANEJO DE FOTOS */
+/* 📸 MANEJO DE FOTOS - VERSIÓN CORREGIDA CON SELECCIÓN MÚLTIPLE             */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 const photoInput = document.getElementById('photoInput');
+
 photoInput.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    addPhotoToSlot(currentPhotoIndex, ev.target.result, file);
-    updatePhotoCounter();
-    updatePreview();
-  };
-  reader.readAsDataURL(file);
+  const files = Array.from(e.target.files);
+  if (files.length === 0) return;
+
+  const currentCount = state.photos.filter(p => p).length;
+  const availableSlots = 5 - currentCount;
+
+  if (availableSlots === 0) {
+    showToast('📸 Ya tienes 5 fotos. Eliminá algunas para agregar más.');
+    photoInput.value = '';
+    return;
+  }
+
+  // Calcular los slots vacíos de forma SINCRÓNICA antes de abrir ningún FileReader
+  const emptySlots = [];
+  for (let i = 0; i < 5; i++) {
+    if (!state.photos[i]) emptySlots.push(i);
+  }
+
+  const photosToAdd = files.slice(0, availableSlots);
+
+  photosToAdd.forEach((file, i) => {
+    const slotIndex = emptySlots[i];
+    if (slotIndex === undefined) return;
+
+    // ✅ CLAVE: Reservar el slot INMEDIATAMENTE (sincrónico) antes de abrir el reader
+    // Así el siguiente archivo no reutiliza el mismo slot vacío
+    state.photos[slotIndex] = { dataUrl: null, file };
+
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      // Actualizar el dataUrl una vez que el reader terminó
+      state.photos[slotIndex].dataUrl = ev.target.result;
+      renderPhotoSlot(slotIndex, ev.target.result, file);
+      updatePhotoCounter();
+      updatePreview();
+    };
+    reader.readAsDataURL(file);
+  });
+
+  if (files.length > availableSlots) {
+    showToast(`📸 Se agregaron ${availableSlots} fotos. Máximo 5 en total.`);
+  }
+
+  // Limpiar el input para poder seleccionar más fotos después
   photoInput.value = '';
 });
 
-function triggerPhotoUpload(index) {
-  currentPhotoIndex = index;
-  photoInput.click();
-}
+function renderPhotoSlot(index, dataUrl, file) {
+  const slots = document.querySelectorAll('.photo-slot');
+  if (index >= slots.length) return;
 
-function addPhotoToSlot(index, dataUrl, file) {
-  const slot = document.querySelectorAll('.photo-slot')[index];
+  const slot = slots[index];
   const addDiv = slot.querySelector('.slot-add');
   const img = slot.querySelector('img');
-  
-  state.photos[index] = { dataUrl, file };
-  
+  const removeBtn = slot.querySelector('.remove-photo');
+
   addDiv.style.display = 'none';
   img.src = dataUrl;
   img.style.display = 'block';
   slot.classList.add('filled');
+
+  if (removeBtn) {
+    removeBtn.style.display = 'flex';
+  }
+}
+
+function addPhotoToSlot(index, dataUrl, file) {
+  // Guardar en el estado (solo si no está ya reservado)
+  state.photos[index] = { dataUrl, file };
+  renderPhotoSlot(index, dataUrl, file);
 }
 
 function removePhoto(index) {
-  const slot = document.querySelectorAll('.photo-slot')[index];
+  const slots = document.querySelectorAll('.photo-slot');
+  if (index >= slots.length) return;
+
+  const slot = slots[index];
   const addDiv = slot.querySelector('.slot-add');
   const img = slot.querySelector('img');
-  
+  const removeBtn = slot.querySelector('.remove-photo');
+
+  // Eliminar del estado
   delete state.photos[index];
-  
+
+  // Resetear UI
   addDiv.style.display = 'flex';
   img.style.display = 'none';
   img.src = '';
   slot.classList.remove('filled');
-  
+
+  if (removeBtn) {
+    removeBtn.style.display = 'none';
+  }
+
   updatePhotoCounter();
   updatePreview();
+}
+
+function triggerPhotoUpload() {
+  const currentCount = state.photos.filter(p => p).length;
+  if (currentCount >= 5) {
+    showToast('📸 Ya tienes 5 fotos. Eliminá algunas para agregar más.');
+    return;
+  }
+  photoInput.click();
 }
 
 function updatePhotoCounter() {
   const count = state.photos.filter(p => p).length;
   const counter = document.getElementById('photoCounter');
-  counter.textContent = `${count}/5 fotos`;
-  counter.classList.toggle('warning', count === 0);
+  if (counter) {
+    counter.textContent = `${count}/5 fotos`;
+    counter.classList.toggle('warning', count === 0);
+  }
 }
 
-function updateDescCount() {
-  const desc = document.getElementById('inp-desc').value;
-  state.descripcion = desc;
-  document.getElementById('descCount').textContent = `${desc.length}/500`;
-  updatePreview();
+function clearAllPhotos() {
+  if (confirm('¿Eliminar todas las fotos?')) {
+    for (let i = 0; i < 5; i++) {
+      if (state.photos[i]) {
+        removePhoto(i);
+      }
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════ */
@@ -102,10 +168,11 @@ let miniMap = null, miniMarker = null;
 function initMiniMap(lat, lng) {
   const el = document.getElementById('miniMap');
   const geoWrap = document.getElementById('geoWrap');
-  el.classList.add('visible');
-  geoWrap.style.display = 'block';
-  document.getElementById('mapHint').style.display = 'block';
-  
+  if (el) el.classList.add('visible');
+  if (geoWrap) geoWrap.style.display = 'block';
+  const mapHint = document.getElementById('mapHint');
+  if (mapHint) mapHint.style.display = 'block';
+
   if (!miniMap) {
     miniMap = L.map('miniMap', { zoomControl: true, scrollWheelZoom: false }).setView([lat, lng], 16);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
@@ -115,8 +182,10 @@ function initMiniMap(lat, lng) {
     miniMarker.on('dragend', e => {
       const pos = e.target.getLatLng();
       state.lat = pos.lat; state.lng = pos.lng;
-      document.getElementById('inp-lat').value = pos.lat;
-      document.getElementById('inp-lng').value = pos.lng;
+      const latInput = document.getElementById('inp-lat');
+      const lngInput = document.getElementById('inp-lng');
+      if (latInput) latInput.value = pos.lat;
+      if (lngInput) lngInput.value = pos.lng;
       reverseGeocode(pos.lat, pos.lng);
       updatePreview();
     });
@@ -138,18 +207,24 @@ async function reverseGeocode(lat, lng) {
       const numero = a.house_number || '';
       const ciudad = a.city || a.town || a.village || a.municipality || '';
       const comuna = a.suburb || a.neighbourhood || a.quarter || '';
-      
+
       state.dir = [calle, numero].filter(Boolean).join(' ') || 'Dirección no disponible';
       state.ciudad = ciudad || '';
       state.comuna = comuna || '';
-      
-      document.getElementById('inp-dir').value = state.dir;
-      document.getElementById('inp-ciudad').value = state.ciudad;
-      document.getElementById('inp-comuna').value = state.comuna;
-      
-      document.getElementById('locDireccion').textContent = state.dir;
-      document.getElementById('locCiudad').textContent = state.ciudad;
-      document.getElementById('locComuna').textContent = state.comuna;
+
+      const dirInput = document.getElementById('inp-dir');
+      const ciudadInput = document.getElementById('inp-ciudad');
+      const comunaInput = document.getElementById('inp-comuna');
+      const locDireccion = document.getElementById('locDireccion');
+      const locCiudad = document.getElementById('locCiudad');
+      const locComuna = document.getElementById('locComuna');
+
+      if (dirInput) dirInput.value = state.dir;
+      if (ciudadInput) ciudadInput.value = state.ciudad;
+      if (comunaInput) comunaInput.value = state.comuna;
+      if (locDireccion) locDireccion.textContent = state.dir;
+      if (locCiudad) locCiudad.textContent = state.ciudad;
+      if (locComuna) locComuna.textContent = state.comuna;
     }
   } catch(e) { console.log('Error reverse geocode:', e); }
 }
@@ -157,40 +232,56 @@ async function reverseGeocode(lat, lng) {
 function usarUbicacionActual() {
   const btn = document.getElementById('btnGpsLoc');
   if (!navigator.geolocation) { alert('Tu navegador no soporta GPS.'); return; }
-  
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Obteniendo ubicación...';
-  
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Obteniendo ubicación...';
+  }
+
   navigator.geolocation.getCurrentPosition(
     async pos => {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
-      
+
       state.lat = lat; state.lng = lng;
-      document.getElementById('inp-lat').value = lat;
-      document.getElementById('inp-lng').value = lng;
-      
+      const latInput = document.getElementById('inp-lat');
+      const lngInput = document.getElementById('inp-lng');
+      if (latInput) latInput.value = lat;
+      if (lngInput) lngInput.value = lng;
+
       await reverseGeocode(lat, lng);
-      
-      document.getElementById('locationInfoCard').style.display = 'block';
-      document.getElementById('ubicacionErr').style.display = 'none';
+
+      const locationCard = document.getElementById('locationInfoCard');
+      const ubicacionErr = document.getElementById('ubicacionErr');
+      const geoWrap = document.getElementById('geoWrap');
+
+      if (locationCard) locationCard.style.display = 'block';
+      if (ubicacionErr) ubicacionErr.style.display = 'none';
       initMiniMap(lat, lng);
-      document.getElementById('geoWrap').className = 'geo-wrap ok';
+      if (geoWrap) geoWrap.className = 'geo-wrap ok';
       updatePreview();
-      
-      btn.disabled = false;
-      btn.innerHTML = '✅ ¡Ubicación obtenida! (Podés ajustar el pin)';
-      setErr('f-ubicacion', false);
+
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '✅ ¡Ubicación obtenida! (Podés ajustar el pin)';
+      }
+      const ubicacionField = document.getElementById('f-ubicacion');
+      if (ubicacionField) setErr('f-ubicacion', false);
     },
     err => {
-      btn.disabled = false;
-      btn.innerHTML = '📍 Obtener mi ubicación actual';
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '📍 Obtener mi ubicación actual';
+      }
       let msg = 'No se pudo obtener la ubicación.';
       if (err.code === 1) msg = 'Permiso denegado.';
       if (err.code === 2) msg = 'Ubicación no disponible.';
       if (err.code === 3) msg = 'Tiempo agotado.';
-      document.getElementById('ubicacionErr').textContent = msg;
-      document.getElementById('ubicacionErr').style.display = 'block';
+      const ubicacionErr = document.getElementById('ubicacionErr');
+      if (ubicacionErr) {
+        ubicacionErr.textContent = msg;
+        ubicacionErr.style.display = 'block';
+      }
       setErr('f-ubicacion', true);
     },
     { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
@@ -203,38 +294,49 @@ function usarUbicacionActual() {
 function goStep(n) {
   if (n > currentStep && !validateStep(currentStep)) return;
   if (n === 4) updatePreview();
-  
+
   currentStep = n;
   document.querySelectorAll('.step-form').forEach(f => f.classList.remove('active'));
-  document.getElementById('successScreen').classList.remove('active');
-  document.getElementById('step' + n).classList.add('active');
-  document.getElementById('progressBar').style.width = (n / TOTAL_STEPS * 100) + '%';
-  
+  const successScreen = document.getElementById('successScreen');
+  if (successScreen) successScreen.classList.remove('active');
+  const stepDiv = document.getElementById('step' + n);
+  if (stepDiv) stepDiv.classList.add('active');
+  const progressBar = document.getElementById('progressBar');
+  if (progressBar) progressBar.style.width = (n / TOTAL_STEPS * 100) + '%';
+
   for (let i = 1; i <= TOTAL_STEPS; i++) {
     const dot = document.getElementById('si' + i);
     if (dot) dot.className = 'si-dot' + (i < n ? ' done' : i === n ? ' active' : '');
     const sl = document.getElementById('sl' + i);
     if (sl) sl.className = 'si-line' + (i < n ? ' done' : '');
   }
-  document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+  const rightPanel = document.querySelector('.right-panel');
+  if (rightPanel) rightPanel.scrollTo({ top: 0, behavior: 'smooth' });
   if (n === 1 && miniMap) setTimeout(() => miniMap.invalidateSize(), 250);
 }
 
 function validateStep(step) {
   if (step === 1) {
-    const nombre = document.getElementById('inp-nombre').value.trim();
+    const nombreInput = document.getElementById('inp-nombre');
+    const nombre = nombreInput ? nombreInput.value.trim() : '';
     state.nombre = nombre;
     const diasOk = state.dias.length > 0;
     const ubicacionOk = state.lat !== null;
-    
+
     setErr('f-nombre', !nombre);
     setErr('f-dias', !diasOk);
     setErr('f-ubicacion', !ubicacionOk);
-    if (!ubicacionOk) document.getElementById('ubicacionErr').style.display = 'block';
-    
-    const catErr = document.querySelector('#f-cat .err-msg');
-    if (!state.cat) catErr.style.display = 'block'; else catErr.style.display = 'none';
-    
+    if (!ubicacionOk) {
+      const ubicacionErr = document.getElementById('ubicacionErr');
+      if (ubicacionErr) ubicacionErr.style.display = 'block';
+    }
+
+    const catErrMsg = document.querySelector('#f-cat .err-msg');
+    if (catErrMsg) {
+      if (!state.cat) catErrMsg.style.display = 'block';
+      else catErrMsg.style.display = 'none';
+    }
+
     return !!(nombre && state.cat && diasOk && ubicacionOk);
   }
   if (step === 2) {
@@ -246,7 +348,8 @@ function validateStep(step) {
     return true;
   }
   if (step === 3) {
-    const wsp = document.getElementById('inp-wsp').value.trim();
+    const wspInput = document.getElementById('inp-wsp');
+    const wsp = wspInput ? wspInput.value.trim() : '';
     setErr('f-wsp', !wsp);
     return !!wsp;
   }
@@ -268,7 +371,8 @@ function selectCat(el, cat, ico) {
   document.querySelectorAll('.cat-opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
   state.cat = cat; state.catIco = ico;
-  document.querySelector('#f-cat .err-msg').style.display = 'none';
+  const catErrMsg = document.querySelector('#f-cat .err-msg');
+  if (catErrMsg) catErrMsg.style.display = 'none';
   updatePreview();
 }
 
@@ -278,7 +382,8 @@ function toggleDay(btn, day) {
   if (idx > -1) state.dias.splice(idx, 1); else state.dias.push(day);
   const order = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
   state.dias.sort((a, b) => order.indexOf(a) - order.indexOf(b));
-  document.getElementById('daysDisplay').textContent = state.dias.length ? state.dias.join(', ') : 'ninguno';
+  const daysDisplay = document.getElementById('daysDisplay');
+  if (daysDisplay) daysDisplay.textContent = state.dias.length ? state.dias.join(', ') : 'ninguno';
   updatePreview();
 }
 
@@ -286,13 +391,19 @@ function toggleDay(btn, day) {
 /* UPDATE PREVIEW */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 function updatePreview() {
-  state.domicilio = document.getElementById('inp-domicilio')?.value || 'no';
-  
-  const nombre = document.getElementById('inp-nombre')?.value || 'Nombre de tu negocio';
-  const desde = document.getElementById('inp-desde')?.value || '08:00';
-  const hasta = document.getElementById('inp-hasta')?.value || '18:00';
-  const ig = document.getElementById('inp-ig')?.value || '';
-  const fb = document.getElementById('inp-fb')?.value || '';
+  const domicilioSelect = document.getElementById('inp-domicilio');
+  if (domicilioSelect) state.domicilio = domicilioSelect.value;
+
+  const nombreInput = document.getElementById('inp-nombre');
+  const nombre = nombreInput ? nombreInput.value : 'Nombre de tu negocio';
+  const desdeInput = document.getElementById('inp-desde');
+  const desde = desdeInput ? desdeInput.value : '08:00';
+  const hastaInput = document.getElementById('inp-hasta');
+  const hasta = hastaInput ? hastaInput.value : '18:00';
+  const igInput = document.getElementById('inp-ig');
+  const ig = igInput ? igInput.value : '';
+  const fbInput = document.getElementById('inp-fb');
+  const fb = fbInput ? fbInput.value : '';
   const desc = state.descripcion || '';
 
   const catLabel = state.cat ? cap(state.cat.replace(/_/g, ' ')) : 'Categoría';
@@ -306,105 +417,135 @@ function updatePreview() {
   const nombreOk = nombre !== 'Nombre de tu negocio' && nombre.length > 0;
   const catOk = !!state.cat;
   const ubicacionOk = !!state.lat;
-  const fotosCount = state.photos.filter(p => p).length;
-  const contactoOk = !!(document.getElementById('inp-wsp')?.value.trim());
-  
-  document.getElementById('checkInfo').classList.toggle('done', nombreOk && catOk);
-  document.getElementById('checkUbicacion').classList.toggle('done', ubicacionOk);
-  document.getElementById('checkFotos').classList.toggle('done', fotosCount >= 1);
-  document.getElementById('checkContacto').classList.toggle('done', contactoOk);
-  document.getElementById('fotosCount').textContent = fotosCount;
+  const fotosCount = state.photos.filter(p => p && p.dataUrl).length;
+  const wspInput = document.getElementById('inp-wsp');
+  const contactoOk = !!(wspInput && wspInput.value.trim());
 
-  document.getElementById('pceHeader').style.background = bg;
-  document.getElementById('pceCatIco').textContent = ico;
-  document.getElementById('pceCatName').textContent = catLabel;
+  const checkInfo = document.getElementById('checkInfo');
+  const checkUbicacion = document.getElementById('checkUbicacion');
+  const checkFotos = document.getElementById('checkFotos');
+  const checkContacto = document.getElementById('checkContacto');
+  const fotosCountSpan = document.getElementById('fotosCount');
 
-  const mainPhoto = state.photos.find(p => p);
+  if (checkInfo) checkInfo.classList.toggle('done', nombreOk && catOk);
+  if (checkUbicacion) checkUbicacion.classList.toggle('done', ubicacionOk);
+  if (checkFotos) checkFotos.classList.toggle('done', fotosCount >= 1);
+  if (checkContacto) checkContacto.classList.toggle('done', contactoOk);
+  if (fotosCountSpan) fotosCountSpan.textContent = fotosCount;
+
+  const pceHeader = document.getElementById('pceHeader');
+  const pceCatIco = document.getElementById('pceCatIco');
+  const pceCatName = document.getElementById('pceCatName');
+
+  if (pceHeader) pceHeader.style.background = bg;
+  if (pceCatIco) pceCatIco.textContent = ico;
+  if (pceCatName) pceCatName.textContent = catLabel;
+
+  // Solo usar fotos que ya tienen dataUrl (FileReader terminó)
+  const mainPhoto = state.photos.find(p => p && p.dataUrl);
   const photoPlaceholder = document.querySelector('.pce-photo-placeholder');
   const photoImg = document.getElementById('pcePhotoImg');
-  if (mainPhoto) {
+
+  if (mainPhoto && photoPlaceholder && photoImg) {
     photoPlaceholder.style.display = 'none';
     photoImg.style.display = 'block';
     photoImg.src = mainPhoto.dataUrl;
-  } else {
+  } else if (photoPlaceholder && photoImg) {
     photoPlaceholder.style.display = 'flex';
     photoImg.style.display = 'none';
   }
 
-  document.getElementById('pceName').textContent = nombre;
-  document.getElementById('pceDesc').textContent = desc || 'Agregá una descripción para destacar tu negocio';
-  document.getElementById('pceDesc').style.opacity = desc ? '1' : '.6';
+  const pceName = document.getElementById('pceName');
+  const pceDesc = document.getElementById('pceDesc');
 
-  const strip = document.getElementById('pcePhotoStrip');
-  strip.innerHTML = '';
-  state.photos.forEach((p, i) => {
-    if (p) {
-      const thumb = document.createElement('div');
-      thumb.className = 'pce-photo-thumb';
-      thumb.innerHTML = `<img src="${p.dataUrl}" alt="Foto ${i+1}"/>`;
-      thumb.onclick = () => goStep(2);
-      strip.appendChild(thumb);
-    }
-  });
-  if (fotosCount > 0 && fotosCount < 5) {
-    const moreBtn = document.createElement('div');
-    moreBtn.className = 'pce-more-photos';
-    moreBtn.textContent = `+${5 - fotosCount}`;
-    moreBtn.onclick = () => goStep(2);
-    strip.appendChild(moreBtn);
+  if (pceName) pceName.textContent = nombre;
+  if (pceDesc) {
+    pceDesc.textContent = desc || 'Agregá una descripción para destacar tu negocio';
+    pceDesc.style.opacity = desc ? '1' : '.6';
   }
 
-  document.getElementById('pceDir').textContent = dirText;
-  document.getElementById('pceCiudadComuna').textContent = ciudadComuna;
-  document.getElementById('pceDias').textContent = state.dias.length ? state.dias.join(', ') : 'No especificado';
-  document.getElementById('pceHora').textContent = horaText;
+  const strip = document.getElementById('pcePhotoStrip');
+  if (strip) {
+    strip.innerHTML = '';
+    state.photos.forEach((p, i) => {
+      if (p && p.dataUrl) {
+        const thumb = document.createElement('div');
+        thumb.className = 'pce-photo-thumb';
+        thumb.innerHTML = `<img src="${p.dataUrl}" alt="Foto ${i+1}"/>`;
+        thumb.onclick = () => goStep(2);
+        strip.appendChild(thumb);
+      }
+    });
+    if (fotosCount > 0 && fotosCount < 5) {
+      const moreBtn = document.createElement('div');
+      moreBtn.className = 'pce-more-photos';
+      moreBtn.textContent = `+${5 - fotosCount}`;
+      moreBtn.onclick = () => goStep(2);
+      strip.appendChild(moreBtn);
+    }
+  }
 
-  const wsp = document.getElementById('inp-wsp')?.value || '';
-  const wspPub = document.getElementById('chk-wsp-pub')?.checked || false;
+  const pceDir = document.getElementById('pceDir');
+  const pceCiudadComuna = document.getElementById('pceCiudadComuna');
+  const pceDias = document.getElementById('pceDias');
+  const pceHora = document.getElementById('pceHora');
+
+  if (pceDir) pceDir.textContent = dirText;
+  if (pceCiudadComuna) pceCiudadComuna.textContent = ciudadComuna;
+  if (pceDias) pceDias.textContent = state.dias.length ? state.dias.join(', ') : 'No especificado';
+  if (pceHora) pceHora.textContent = horaText;
+
+  const wsp = wspInput ? wspInput.value : '';
+  const wspPubCheck = document.getElementById('chk-wsp-pub');
+  const wspPub = wspPubCheck ? wspPubCheck.checked : false;
   const contactoText = wspPub && wsp ? `WhatsApp: ${wsp}` : 'WhatsApp (privado)';
-  document.getElementById('pceContacto').textContent = contactoText;
-  
+  const pceContacto = document.getElementById('pceContacto');
+  if (pceContacto) pceContacto.textContent = contactoText;
+
   const redes = [];
   if (ig) redes.push('IG');
   if (fb) redes.push('FB');
   if (state.domicilio !== 'no') redes.push(domicilioTexto);
-  document.getElementById('pceRedes').textContent = redes.length ? redes.join(' · ') : 'Sin redes sociales';
+  const pceRedes = document.getElementById('pceRedes');
+  if (pceRedes) pceRedes.textContent = redes.length ? redes.join(' · ') : 'Sin redes sociales';
 
   const socialDiv = document.getElementById('pceSocialLinks');
-  socialDiv.innerHTML = '';
-  
-  if (state.domicilio !== 'no') {
-    const domBadge = document.createElement('span');
-    domBadge.className = `domicilio-badge-preview ${state.domicilio}`;
-    domBadge.innerHTML = domicilioTexto;
-    domBadge.style.cursor = 'pointer';
-    domBadge.onclick = () => goStep(1);
-    socialDiv.appendChild(domBadge);
-  }
-  
-  if (ig) {
-    const igBtn = document.createElement('a');
-    igBtn.className = 'pce-social-btn';
-    igBtn.innerHTML = '<span>📸</span> Instagram';
-    igBtn.href = '#';
-    igBtn.onclick = (e) => { e.preventDefault(); goStep(3); };
-    socialDiv.appendChild(igBtn);
-  }
-  if (fb) {
-    const fbBtn = document.createElement('a');
-    fbBtn.className = 'pce-social-btn';
-    fbBtn.innerHTML = '<span>📘</span> Facebook';
-    fbBtn.href = '#';
-    fbBtn.onclick = (e) => { e.preventDefault(); goStep(3); };
-    socialDiv.appendChild(fbBtn);
-  }
-  if (wspPub && wsp) {
-    const wspBtn = document.createElement('a');
-    wspBtn.className = 'pce-social-btn';
-    wspBtn.innerHTML = '<span>💬</span> WhatsApp';
-    wspBtn.href = '#';
-    wspBtn.onclick = (e) => { e.preventDefault(); goStep(3); };
-    socialDiv.appendChild(wspBtn);
+  if (socialDiv) {
+    socialDiv.innerHTML = '';
+
+    if (state.domicilio !== 'no') {
+      const domBadge = document.createElement('span');
+      domBadge.className = `domicilio-badge-preview ${state.domicilio}`;
+      domBadge.innerHTML = domicilioTexto;
+      domBadge.style.cursor = 'pointer';
+      domBadge.onclick = () => goStep(1);
+      socialDiv.appendChild(domBadge);
+    }
+
+    if (ig) {
+      const igBtn = document.createElement('a');
+      igBtn.className = 'pce-social-btn';
+      igBtn.innerHTML = '<span>📸</span> Instagram';
+      igBtn.href = '#';
+      igBtn.onclick = (e) => { e.preventDefault(); goStep(3); };
+      socialDiv.appendChild(igBtn);
+    }
+    if (fb) {
+      const fbBtn = document.createElement('a');
+      fbBtn.className = 'pce-social-btn';
+      fbBtn.innerHTML = '<span>📘</span> Facebook';
+      fbBtn.href = '#';
+      fbBtn.onclick = (e) => { e.preventDefault(); goStep(3); };
+      socialDiv.appendChild(fbBtn);
+    }
+    if (wspPub && wsp) {
+      const wspBtn = document.createElement('a');
+      wspBtn.className = 'pce-social-btn';
+      wspBtn.innerHTML = '<span>💬</span> WhatsApp';
+      wspBtn.href = '#';
+      wspBtn.onclick = (e) => { e.preventDefault(); goStep(3); };
+      socialDiv.appendChild(wspBtn);
+    }
   }
 }
 
@@ -412,74 +553,107 @@ function updatePreview() {
 /* SUBMIT */
 /* ═══════════════════════════════════════════════════════════════════════════ */
 async function submitForm() {
-  if (!document.getElementById('chk-terms').checked) {
+  const termsCheck = document.getElementById('chk-terms');
+  if (!termsCheck || !termsCheck.checked) {
     showToast('Aceptá los términos para continuar 👆');
     return;
   }
-  
-  const photoCount = state.photos.filter(p => p).length;
+
+  const photoCount = state.photos.filter(p => p && p.file).length;
   if (photoCount === 0) {
     showToast('📸 Subí al menos 1 foto de tu negocio');
     goStep(2);
     return;
   }
-  
-  document.getElementById('errorBanner').classList.remove('show');
-  const btn = document.getElementById('submitBtn');
-  btn.disabled = true;
-  btn.innerHTML = '<span class="spinner"></span> Enviando...';
 
-  const desde = document.getElementById('inp-desde').value || '08:00';
-  const hasta = document.getElementById('inp-hasta').value || '18:00';
+  const errorBanner = document.getElementById('errorBanner');
+  if (errorBanner) errorBanner.classList.remove('show');
+  const btn = document.getElementById('submitBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span> Enviando...';
+  }
+
+  const desdeInput = document.getElementById('inp-desde');
+  const desde = desdeInput ? desdeInput.value : '08:00';
+  const hastaInput = document.getElementById('inp-hasta');
+  const hasta = hastaInput ? hastaInput.value : '18:00';
   const diasStr = state.dias.length ? state.dias.join(', ') : 'No especificado';
   const diasAtencion = diasStr + ' · ' + desde + '–' + hasta;
 
+  const nombreInput = document.getElementById('inp-nombre');
+  const wspInput = document.getElementById('inp-wsp');
+  const wspPubCheck = document.getElementById('chk-wsp-pub');
+  const igInput = document.getElementById('inp-ig');
+  const fbInput = document.getElementById('inp-fb');
+  const csrfToken = document.querySelector('meta[name="csrf-token"]');
+
   const formData = new FormData();
-  formData.append('csrfmiddlewaretoken', document.querySelector('meta[name="csrf-token"]').content);
-  formData.append('nombre', document.getElementById('inp-nombre').value.trim());
+  formData.append('csrfmiddlewaretoken', csrfToken ? csrfToken.content : '');
+  formData.append('nombre', nombreInput ? nombreInput.value.trim() : '');
   formData.append('tipo', state.cat || 'emprendimiento');
   formData.append('descripcion', state.descripcion);
   formData.append('direccion', state.dir || '');
   formData.append('ciudad', state.ciudad || '');
   formData.append('comuna', state.comuna || '');
   formData.append('dias_atencion', diasAtencion);
-  formData.append('whatsapp', document.getElementById('inp-wsp').value.trim());
-  formData.append('wsp_publico', document.getElementById('chk-wsp-pub').checked ? 'si' : 'no');
-  formData.append('instagram', document.getElementById('inp-ig').value.trim());
-  formData.append('facebook', document.getElementById('inp-fb').value.trim());
+  formData.append('whatsapp', wspInput ? wspInput.value.trim() : '');
+  formData.append('wsp_publico', (wspPubCheck && wspPubCheck.checked) ? 'si' : 'no');
+  formData.append('instagram', igInput ? igInput.value.trim() : '');
+  formData.append('facebook', fbInput ? fbInput.value.trim() : '');
   formData.append('latitud', state.lat ?? '');
   formData.append('longitud', state.lng ?? '');
   formData.append('domicilio', state.domicilio);
-  
-  state.photos.forEach((p, i) => {
-    if (p && p.file) {
-      formData.append(`imagen_${i}`, p.file);
-    }
+
+  // Enviar todas las fotos válidas
+  const validPhotos = state.photos.filter(p => p && p.file);
+  console.log(`📸 Enviando ${validPhotos.length} fotos al servidor`);
+  validPhotos.forEach((photo) => {
+    formData.append('imagenes', photo.file);
   });
+  formData.append('total_fotos', validPhotos.length);
 
   try {
-    const res = await fetch(window.location.href, { method: 'POST', body: formData });
+    const res = await fetch(window.location.href, {
+      method: 'POST',
+      body: formData
+    });
+
     if (res.ok) {
-      document.getElementById('step' + TOTAL_STEPS).classList.remove('active');
-      document.getElementById('progressBar').style.width = '100%';
+      const step4 = document.getElementById('step' + TOTAL_STEPS);
+      if (step4) step4.classList.remove('active');
+      const progressBar = document.getElementById('progressBar');
+      if (progressBar) progressBar.style.width = '100%';
       for (let i = 1; i <= TOTAL_STEPS; i++) {
-        document.getElementById('si' + i).className = 'si-dot done';
+        const dot = document.getElementById('si' + i);
+        if (dot) dot.className = 'si-dot done';
         const sl = document.getElementById('sl' + i);
         if (sl) sl.className = 'si-line done';
       }
-      document.getElementById('successScreen').classList.add('active');
-      document.querySelector('.right-panel').scrollTo({ top: 0, behavior: 'smooth' });
+      const successScreen = document.getElementById('successScreen');
+      if (successScreen) successScreen.classList.add('active');
+      const rightPanel = document.querySelector('.right-panel');
+      if (rightPanel) rightPanel.scrollTo({ top: 0, behavior: 'smooth' });
     } else {
-      document.getElementById('errorMsg').textContent = 'Error del servidor (' + res.status + ').';
-      document.getElementById('errorBanner').classList.add('show');
+      const errorText = await res.text();
+      console.error('Error del servidor:', errorText);
+      const errorMsg = document.getElementById('errorMsg');
+      if (errorMsg) errorMsg.textContent = 'Error del servidor (' + res.status + '). Revisá la consola.';
+      if (errorBanner) errorBanner.classList.add('show');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = '<span>🚀</span> Publicar mi negocio gratis <span class="btn-arrow">→</span>';
+      }
+    }
+  } catch (e) {
+    console.error('Error de conexión:', e);
+    const errorMsg = document.getElementById('errorMsg');
+    if (errorMsg) errorMsg.textContent = 'Sin conexión. Revisá tu internet.';
+    if (errorBanner) errorBanner.classList.add('show');
+    if (btn) {
       btn.disabled = false;
       btn.innerHTML = '<span>🚀</span> Publicar mi negocio gratis <span class="btn-arrow">→</span>';
     }
-  } catch (e) {
-    document.getElementById('errorMsg').textContent = 'Sin conexión. Revisá tu internet.';
-    document.getElementById('errorBanner').classList.add('show');
-    btn.disabled = false;
-    btn.innerHTML = '<span>🚀</span> Publicar mi negocio gratis <span class="btn-arrow">→</span>';
   }
 }
 
@@ -530,16 +704,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Foto slots
+  // Foto slots - abrir selector al hacer click en slot vacío
   document.querySelectorAll('.photo-slot').forEach(el => {
     el.addEventListener('click', function(e) {
       if (e.target.classList.contains('remove-photo')) return;
-      const index = parseInt(this.dataset.index);
-      triggerPhotoUpload(index);
+      const currentCount = state.photos.filter(p => p).length;
+      if (currentCount >= 5) {
+        showToast('📸 Ya tienes 5 fotos. Eliminá algunas para agregar más.');
+        return;
+      }
+      triggerPhotoUpload();
     });
   });
 
-  // Remove photo buttons
+  // Botones de eliminar foto
   document.querySelectorAll('.remove-photo').forEach(el => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -548,46 +726,89 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
+  // Botón limpiar todas las fotos (si existe)
+  const clearAllBtn = document.getElementById('clearAllPhotosBtn');
+  if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', clearAllPhotos);
+  }
+
   // Input events
-  document.getElementById('inp-nombre').addEventListener('input', updatePreview);
-  document.getElementById('inp-desde').addEventListener('input', updatePreview);
-  document.getElementById('inp-hasta').addEventListener('input', updatePreview);
-  document.getElementById('inp-domicilio').addEventListener('change', updatePreview);
-  document.getElementById('inp-desc').addEventListener('input', updateDescCount);
-  document.getElementById('inp-wsp').addEventListener('input', updatePreview);
-  document.getElementById('inp-ig').addEventListener('input', updatePreview);
-  document.getElementById('inp-fb').addEventListener('input', updatePreview);
-  document.getElementById('chk-wsp-pub').addEventListener('change', updatePreview);
+  const inpNombre    = document.getElementById('inp-nombre');
+  const inpDesde     = document.getElementById('inp-desde');
+  const inpHasta     = document.getElementById('inp-hasta');
+  const inpDomicilio = document.getElementById('inp-domicilio');
+  const inpDesc      = document.getElementById('inp-desc');
+  const inpWsp       = document.getElementById('inp-wsp');
+  const inpIg        = document.getElementById('inp-ig');
+  const inpFb        = document.getElementById('inp-fb');
+  const chkWspPub    = document.getElementById('chk-wsp-pub');
+
+  if (inpNombre)    inpNombre.addEventListener('input', updatePreview);
+  if (inpDesde)     inpDesde.addEventListener('input', updatePreview);
+  if (inpHasta)     inpHasta.addEventListener('input', updatePreview);
+  if (inpDomicilio) inpDomicilio.addEventListener('change', updatePreview);
+  if (inpDesc) inpDesc.addEventListener('input', () => {
+    state.descripcion = inpDesc.value;
+    const descCount = document.getElementById('descCount');
+    if (descCount) descCount.textContent = `${inpDesc.value.length}/500`;
+    updatePreview();
+  });
+  if (inpWsp)    inpWsp.addEventListener('input', updatePreview);
+  if (inpIg)     inpIg.addEventListener('input', updatePreview);
+  if (inpFb)     inpFb.addEventListener('input', updatePreview);
+  if (chkWspPub) chkWspPub.addEventListener('change', updatePreview);
 
   // Botones de navegación
-  document.getElementById('btnGpsLoc').addEventListener('click', usarUbicacionActual);
-  document.getElementById('btnStep2').addEventListener('click', () => goStep(2));
-  document.getElementById('btnBackTo1').addEventListener('click', () => goStep(1));
-  document.getElementById('photoContinueBtn').addEventListener('click', () => goStep(3));
-  document.getElementById('btnBackTo2').addEventListener('click', () => goStep(2));
-  document.getElementById('btnStep4').addEventListener('click', () => goStep(4));
-  document.getElementById('btnBackTo3').addEventListener('click', () => goStep(3));
-  
+  const btnGpsLoc       = document.getElementById('btnGpsLoc');
+  const btnStep2        = document.getElementById('btnStep2');
+  const btnBackTo1      = document.getElementById('btnBackTo1');
+  const photoContinueBtn= document.getElementById('photoContinueBtn');
+  const btnBackTo2      = document.getElementById('btnBackTo2');
+  const btnStep4        = document.getElementById('btnStep4');
+  const btnBackTo3      = document.getElementById('btnBackTo3');
+  const submitBtn       = document.getElementById('submitBtn');
+  const verMapaBtn      = document.getElementById('verMapaBtn');
+
+  if (btnGpsLoc)        btnGpsLoc.addEventListener('click', usarUbicacionActual);
+  if (btnStep2)         btnStep2.addEventListener('click', () => goStep(2));
+  if (btnBackTo1)       btnBackTo1.addEventListener('click', () => goStep(1));
+  if (photoContinueBtn) photoContinueBtn.addEventListener('click', () => goStep(3));
+  if (btnBackTo2)       btnBackTo2.addEventListener('click', () => goStep(2));
+  if (btnStep4)         btnStep4.addEventListener('click', () => goStep(4));
+  if (btnBackTo3)       btnBackTo3.addEventListener('click', () => goStep(3));
+  if (submitBtn)        submitBtn.addEventListener('click', submitForm);
+
   // Botones de edición en preview
-  document.getElementById('editPhotosBtn').addEventListener('click', () => goStep(2));
-  document.getElementById('editInfoBtn').addEventListener('click', () => goStep(1));
-  document.getElementById('editUbicacionBtn').addEventListener('click', () => goStep(1));
-  document.getElementById('editHorarioBtn').addEventListener('click', () => goStep(1));
-  document.getElementById('editContactoBtn').addEventListener('click', () => goStep(3));
-  
-  document.getElementById('qaEditInfo').addEventListener('click', () => goStep(1));
-  document.getElementById('qaEditPhotos').addEventListener('click', () => goStep(2));
-  document.getElementById('qaEditContacto').addEventListener('click', () => goStep(3));
-  
-  // Submit
-  document.getElementById('submitBtn').addEventListener('click', submitForm);
-  
+  const editPhotosBtn   = document.getElementById('editPhotosBtn');
+  const editInfoBtn     = document.getElementById('editInfoBtn');
+  const editUbicacionBtn= document.getElementById('editUbicacionBtn');
+  const editHorarioBtn  = document.getElementById('editHorarioBtn');
+  const editContactoBtn = document.getElementById('editContactoBtn');
+  const qaEditInfo      = document.getElementById('qaEditInfo');
+  const qaEditPhotos    = document.getElementById('qaEditPhotos');
+  const qaEditContacto  = document.getElementById('qaEditContacto');
+
+  if (editPhotosBtn)    editPhotosBtn.addEventListener('click', () => goStep(2));
+  if (editInfoBtn)      editInfoBtn.addEventListener('click', () => goStep(1));
+  if (editUbicacionBtn) editUbicacionBtn.addEventListener('click', () => goStep(1));
+  if (editHorarioBtn)   editHorarioBtn.addEventListener('click', () => goStep(1));
+  if (editContactoBtn)  editContactoBtn.addEventListener('click', () => goStep(3));
+  if (qaEditInfo)       qaEditInfo.addEventListener('click', () => goStep(1));
+  if (qaEditPhotos)     qaEditPhotos.addEventListener('click', () => goStep(2));
+  if (qaEditContacto)   qaEditContacto.addEventListener('click', () => goStep(3));
+
   // Ver mapa
-  document.getElementById('verMapaBtn').addEventListener('click', () => {
-    window.location.href = document.querySelector('meta[name="csrf-token"]')?.getAttribute('data-index-url') || '/';
-  });
+  if (verMapaBtn) {
+    verMapaBtn.addEventListener('click', () => {
+      window.location.href = '/';
+    });
+  }
 
   // Inicializar contadores
   updatePhotoCounter();
-  updateDescCount();
+  const inpDescElement = document.getElementById('inp-desc');
+  if (inpDescElement) {
+    const descCount = document.getElementById('descCount');
+    if (descCount) descCount.textContent = `${inpDescElement.value.length}/500`;
+  }
 });

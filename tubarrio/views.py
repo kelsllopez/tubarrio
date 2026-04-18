@@ -392,13 +392,50 @@ def ingresa_tu_negocio(request):
             estado='pendiente',
         )
         
-        # Guardar imágenes
-        for key, file in request.FILES.items():
-            if key.startswith('imagen_'):
-                ImagenNegocio.objects.create(
-                    negocio=negocio,
-                    imagen=file
-                )
+        # ─────────────────────────────────────────────────────────────────────
+        # 🔥 NUEVA VERSIÓN: Guardar múltiples imágenes (versión mejorada)
+        # ─────────────────────────────────────────────────────────────────────
+        
+        # Método 1: Usar 'imagenes' como lista (recomendado)
+        imagenes = request.FILES.getlist('imagenes')
+        
+        # Método 2: Alternativa - también buscar imágenes con nombre imagen_0, imagen_1, etc.
+        if not imagenes:
+            # Buscar imágenes con el formato imagen_0, imagen_1, etc.
+            i = 0
+            while True:
+                imagen_key = f'imagen_{i}'
+                if imagen_key in request.FILES:
+                    imagenes.append(request.FILES[imagen_key])
+                    i += 1
+                else:
+                    break
+        
+        # Método 3: También buscar cualquier archivo que empiece con 'imagen_'
+        for key in request.FILES.keys():
+            if key.startswith('imagen_') and key not in [f'imagen_{i}' for i in range(len(imagenes))]:
+                imagenes.append(request.FILES[key])
+        
+        # Guardar todas las imágenes encontradas
+        imagenes_guardadas = 0
+        for imagen in imagenes:
+            if imagen:  # Verificar que la imagen no esté vacía
+                try:
+                    ImagenNegocio.objects.create(
+                        negocio=negocio,
+                        imagen=imagen
+                    )
+                    imagenes_guardadas += 1
+                except Exception as e:
+                    print(f"Error al guardar imagen: {e}")
+        
+        # Debug: imprimir cuántas imágenes se guardaron
+        print(f"📸 Negocio '{nombre}' creado con {imagenes_guardadas} imágenes")
+        
+        # Si no se guardaron imágenes pero se esperaban, mostrar advertencia
+        total_fotos = request.POST.get('total_fotos', '0')
+        if total_fotos.isdigit() and int(total_fotos) > 0 and imagenes_guardadas == 0:
+            print(f"⚠️ ADVERTENCIA: Se esperaban {total_fotos} fotos pero no se guardó ninguna")
         
         # Limpiar caché del dashboard
         cache.delete('dashboard_stats')

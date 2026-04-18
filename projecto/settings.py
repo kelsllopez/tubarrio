@@ -139,19 +139,22 @@ TIME_ZONE = 'America/Santiago'
 USE_I18N = True
 
 USE_TZ = True
-
-
-
+ 
 import os
+
+# ─── CLOUDINARY CONFIGURATION ────────────────────────────────────────────────
 import cloudinary
 import cloudinary.uploader
 import cloudinary.api
+from dotenv import load_dotenv
 
-# ─── CLOUDINARY CONFIGURATION ────────────────────────────────────────────────
-# En desarrollo local usa estos valores, en Render usa variables de entorno
-CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', 'katiuska')
-CLOUDINARY_API_KEY = os.environ.get('CLOUDINARY_API_KEY', '424475881119632')
-CLOUDINARY_API_SECRET = os.environ.get('CLOUDINARY_API_SECRET', 'U8ajQxioKkbRDL3qk5AA8--5yVM')
+# Cargar variables de entorno desde .env
+load_dotenv()
+
+# Tomar valores del archivo .env
+CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
+CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
+CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
 # Configurar cloudinary
 cloudinary.config(
