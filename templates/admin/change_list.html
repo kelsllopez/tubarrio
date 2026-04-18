@@ -3,7 +3,6 @@
 
 {% block content_title %}
 <style>
-/* ── Badges de estado y tipo inline ── */
 .tb-inline-badge {
   display: inline-flex; align-items: center; gap: 4px;
   font-size: 0.65rem; font-weight: 700; letter-spacing: 0.05em;
@@ -20,7 +19,6 @@
 .badge-mini_market{ background: rgba(34,197,94,0.12);  color: #22c55e; }
 .badge-otros      { background: rgba(100,116,139,0.12);color: #64748b; }
 
-/* ── Header de la sección con mini stats ── */
 .tb-list-header {
   display: flex; align-items: center; justify-content: space-between;
   margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
@@ -50,7 +48,6 @@
 }
 </style>
 
-{# Header personalizado con mini stats — reemplaza solo el h1 #}
 <div class="tb-list-header">
   <h1 class="tb-list-title">🏪 Negocios</h1>
   <div class="tb-mini-stats">
@@ -73,7 +70,6 @@
 {% block result_list %}
   {{ block.super }}
 
-  {# Script para inyectar badges bonitos en las columnas #}
   <script>
   document.addEventListener('DOMContentLoaded', function() {
 

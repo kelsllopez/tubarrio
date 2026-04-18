@@ -4,7 +4,6 @@
 {% block content %}
 
 <style>
-/* ── Header del formulario ── */
 .tb-form-header {
   background: linear-gradient(135deg, #0f172a 0%, #1a0e06 100%);
   border: 1px solid #1e293b;
@@ -33,7 +32,6 @@
 
 .tb-form-header-emoji { font-size: 3rem; opacity: 0.7; }
 
-/* ── Indicador de campos completados ── */
 .tb-completeness {
   background: #0f172a; border: 1px solid #1e293b; border-radius: 10px;
   padding: 0.9rem 1.2rem; margin-bottom: 1rem;
@@ -61,7 +59,6 @@
   color: #F59E0B; white-space: nowrap;
 }
 
-/* ── Info del negocio actual (solo en edición) ── */
 .tb-negocio-info {
   display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 1.2rem;
 }
@@ -75,7 +72,6 @@
 .tb-info-chip strong { color: #e2e8f0; font-weight: 600; }
 </style>
 
-{# Header del formulario #}
 <div class="tb-form-header">
   <div class="tb-form-header-info">
     {% if original %}
@@ -91,7 +87,6 @@
   </div>
 </div>
 
-{# Info chips si estamos editando #}
 {% if original %}
 <div class="tb-negocio-info">
   <div class="tb-info-chip">📍 <strong>{{ original.direccion|truncatechars:35 }}</strong></div>
@@ -111,7 +106,6 @@
 </div>
 {% endif %}
 
-{# Barra de completitud (calculada con JS) #}
 <div class="tb-completeness">
   <span class="tb-completeness-label">Completitud del perfil</span>
   <div class="tb-completeness-track">
@@ -120,13 +114,11 @@
   <span class="tb-completeness-pct" id="tb-comp-pct">0%</span>
 </div>
 
-{# Formulario original #}
 {{ block.super }}
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
 
-  // ── Calcular completitud del perfil ─────────────────────
   const campos = [
     'id_nombre', 'id_tipo', 'id_descripcion',
     'id_direccion', 'id_dias_atencion',
@@ -147,7 +139,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (bar) bar.style.width = pct + '%';
     if (pctEl) pctEl.textContent = pct + '%';
 
-    // Color según completitud
     if (bar) {
       if (pct < 40)      bar.style.background = 'linear-gradient(90deg, #ef4444, #f97316)';
       else if (pct < 75) bar.style.background = 'linear-gradient(90deg, #F59E0B, #f97316)';
@@ -155,14 +146,12 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }
 
-  // Calcular al cargar y al cambiar campos
   setTimeout(calcularCompletitud, 100);
   campos.forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('input', calcularCompletitud);
   });
 
-  // ── Añadir placeholders útiles ───────────────────────────
   const placeholders = {
     'id_nombre':       'Ej: Minimarket Don José',
     'id_descripcion':  'Describe qué ofrece el negocio, sus especialidades...',
@@ -182,7 +171,6 @@ document.addEventListener('DOMContentLoaded', function() {
     if (el) el.placeholder = ph;
   });
 
-  // ── Labels más amigables ─────────────────────────────────
   const labelMap = {
     'id_nombre':        '🏪 Nombre del negocio',
     'id_tipo':          '🗂️ Categoría',
@@ -202,7 +190,6 @@ document.addEventListener('DOMContentLoaded', function() {
   Object.entries(labelMap).forEach(([id, text]) => {
     const label = document.querySelector(`label[for="${id}"]`);
     if (label) {
-      // preserva el asterisco de required
       const req = label.querySelector('.required');
       label.textContent = text + ' ';
       if (req) label.appendChild(req);

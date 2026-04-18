@@ -1,4 +1,3 @@
-"""Rate limiting simple vía cache (sin dependencias extra)."""
 from django.core.cache import cache
 
 

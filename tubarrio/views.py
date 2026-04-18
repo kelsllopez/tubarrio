@@ -2,7 +2,6 @@ import urllib.parse
 import urllib.request
 import json
 import hashlib
-
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_GET
@@ -20,7 +19,6 @@ from rest_framework.pagination import PageNumberPagination
 from .serializers import NegocioSerializer
 
 
-# Cache simple en memoria para geocodificación (opcional, puedes usar Django cache)
 _geocode_memory_cache = {}
 
 
@@ -36,18 +34,15 @@ def geocode(direccion, comuna='', ciudad='Chile'):
     """
     clave = _geocode_cache_key(direccion, comuna, ciudad)
     
-    # Intentar desde caché de Django
     cached = cache.get(f'geocode_{clave}')
     if cached:
         return cached['lat'], cached['lng']
     
-    # Intentar desde caché en memoria
     if clave in _geocode_memory_cache:
         lat, lng = _geocode_memory_cache[clave]
         cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)  # 30 días
         return lat, lng
 
-    # Geocodificar con Nominatim
     texto = ', '.join(filter(None, [direccion, comuna, ciudad]))
     query = urllib.parse.quote(texto)
     url = f'https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1'
@@ -146,15 +141,12 @@ def _parse_bbox(bbox: str):
         return None
 
 
-# ── Vista principal — mapa ────────────────────────────────────────────────────
 def index(request):
     """Vista principal que muestra el mapa con todos los negocios aprobados"""
     negocios_qs = Negocio.objects.filter(estado='aprobado').prefetch_related('imagenes').order_by('-fecha_creacion')
     
-    # Preparar datos para JSON
     negocios_data = []
     for negocio in negocios_qs:
-        # Obtener URLs absolutas completas de imágenes
         imagenes = []
         for img in negocio.imagenes.all():
             img_url = img.imagen.url
@@ -183,7 +175,6 @@ def index(request):
             'imagenes': imagenes,
         })
     
-    # Convertir a formato del frontend usando _negocio_dict
     negocios_formateados = [_negocio_dict(n, True) for n in negocios_data]
     
     negocios_json = json.dumps(
@@ -195,7 +186,6 @@ def index(request):
     return render(request, 'index.html', {'negocios_json': negocios_json})
 
 
-# ── API JSON ──────────────────────────────────────────────────────────────────
 @require_GET
 @cache_control(no_cache=True)
 def api_negocios(request):
@@ -289,7 +279,6 @@ def api_negocios(request):
     
     formatted_data = [_negocio_dict(n, True) for n in data]
 
-    # Generar ETag para cache
     etag_src = '|'.join(
         f"{n['id']}:{n['fecha_modificacion'].timestamp() if n.get('fecha_modificacion') else 0:.3f}"
         for n in data
@@ -313,7 +302,6 @@ def api_negocios(request):
     return resp
 
 
-# ── Health check ──────────────────────────────────────────────────────────────
 @require_GET
 def healthz(request):
     """GET /api/healthz/ — DB y app vivos."""
@@ -326,7 +314,6 @@ def healthz(request):
     return JsonResponse({'ok': ok, 'service': 'tubarrio'}, status=status)
 
 
-# ── Formulario de registro ────────────────────────────────────────────────────
 def ingresa_tu_negocio(request):
     """Vista para registrar un nuevo negocio"""
     if request.method == 'POST':
@@ -337,7 +324,6 @@ def ingresa_tu_negocio(request):
                 content_type='text/plain; charset=utf-8',
             )
 
-        # Datos básicos
         nombre = request.POST.get('nombre', '').strip()
         descripcion = request.POST.get('descripcion', '').strip()
         direccion = request.POST.get('direccion', '').strip()
@@ -345,16 +331,13 @@ def ingresa_tu_negocio(request):
         ciudad = request.POST.get('ciudad', 'Chile').strip()
         dias_atencion = request.POST.get('dias_atencion', '').strip()
         
-        # Domicilio
         domicilio = request.POST.get('domicilio', 'no').strip()
         if domicilio not in ['no', 'si', 'ambos']:
             domicilio = 'no'
         
-        # Tipo
         tipo_recibido = request.POST.get('tipo', '').strip()
         tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
         
-        # Contacto
         wsp_publico = request.POST.get('wsp_publico', 'no').strip()
         whatsapp_raw = request.POST.get('whatsapp', '').strip() or None
         whatsapp = whatsapp_raw if wsp_publico == 'si' else None
@@ -362,7 +345,6 @@ def ingresa_tu_negocio(request):
         instagram = request.POST.get('instagram', '').strip() or None
         facebook = request.POST.get('facebook', '').strip() or None
         
-        # Ubicación
         lat_raw = request.POST.get('latitud', '').strip()
         lng_raw = request.POST.get('longitud', '').strip()
         try:
@@ -374,7 +356,6 @@ def ingresa_tu_negocio(request):
         if latitud is None or longitud is None:
             latitud, longitud = geocode(direccion, comuna, ciudad)
 
-        # Crear negocio
         negocio = Negocio.objects.create(
             nombre=nombre,
             tipo=tipo,
@@ -392,16 +373,9 @@ def ingresa_tu_negocio(request):
             estado='pendiente',
         )
         
-        # ─────────────────────────────────────────────────────────────────────
-        # 🔥 NUEVA VERSIÓN: Guardar múltiples imágenes (versión mejorada)
-        # ─────────────────────────────────────────────────────────────────────
-        
-        # Método 1: Usar 'imagenes' como lista (recomendado)
         imagenes = request.FILES.getlist('imagenes')
         
-        # Método 2: Alternativa - también buscar imágenes con nombre imagen_0, imagen_1, etc.
         if not imagenes:
-            # Buscar imágenes con el formato imagen_0, imagen_1, etc.
             i = 0
             while True:
                 imagen_key = f'imagen_{i}'
@@ -411,15 +385,13 @@ def ingresa_tu_negocio(request):
                 else:
                     break
         
-        # Método 3: También buscar cualquier archivo que empiece con 'imagen_'
         for key in request.FILES.keys():
             if key.startswith('imagen_') and key not in [f'imagen_{i}' for i in range(len(imagenes))]:
                 imagenes.append(request.FILES[key])
         
-        # Guardar todas las imágenes encontradas
         imagenes_guardadas = 0
         for imagen in imagenes:
-            if imagen:  # Verificar que la imagen no esté vacía
+            if imagen: 
                 try:
                     ImagenNegocio.objects.create(
                         negocio=negocio,
@@ -445,7 +417,6 @@ def ingresa_tu_negocio(request):
     return render(request, 'negocio.html')
 
 
-# ─── ViewSet DRF ───────────────────────────────────────────────────────────────
 class NegocioPagination(PageNumberPagination):
     page_size = 50
     page_size_query_param = 'page_size'

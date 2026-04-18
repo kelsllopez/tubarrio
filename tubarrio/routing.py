@@ -1,5 +1,5 @@
 from django.urls import re_path
-from . import consumers  # ajusta al nombre de tu app
+from . import consumers 
 
 websocket_urlpatterns = [
     re_path(r"^ws/negocios/$", consumers.NegociosConsumer.as_asgi()),

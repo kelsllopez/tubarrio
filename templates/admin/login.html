@@ -29,7 +29,6 @@
     overflow: hidden;
   }
 
-  /* ── Fondo con degradados de luz ── */
   .tb-bg {
     position: fixed;
     inset: 0;
@@ -41,7 +40,6 @@
       linear-gradient(160deg, #060d1a 0%, #07101e 50%, #060c18 100%);
   }
 
-  /* ── Skyline SVG ── */
   .tb-skyline {
     position: fixed;
     bottom: 0; left: 0; right: 0;
@@ -50,7 +48,6 @@
     pointer-events: none;
   }
 
-  /* ── Estrellas ── */
   .tb-stars {
     position: fixed;
     inset: 0;
@@ -68,7 +65,6 @@
     50%      { opacity: var(--hi,.45); }
   }
 
-  /* ── Orbes de luz ── */
   .tb-orb {
     position: fixed;
     border-radius: 50%;
@@ -82,7 +78,6 @@
     50%     { transform: translateY(-18px) translateX(12px); }
   }
 
-  /* ── Centrado perfecto ── */
   .tb-page {
     position: relative;
     z-index: 10;
@@ -95,7 +90,6 @@
     gap: 0;
   }
 
-  /* ── Wrapper único que contiene logo + form ── */
   .tb-wrapper {
     width: 100%;
     max-width: 400px;
@@ -106,7 +100,6 @@
     to   { opacity:1; transform: translateY(0) scale(1); }
   }
 
-  /* ── Logo dentro del card ── */
   .tb-logo {
     text-align: center;
     padding: 2.2rem 2rem 1.6rem;
@@ -118,7 +111,6 @@
     position: relative;
     overflow: hidden;
   }
-  /* Línea superior ámbar */
   .tb-logo::before {
     content: '';
     position: absolute;
@@ -162,7 +154,6 @@
     display: block;
   }
 
-  /* ── Formulario ── */
   .tb-form-card {
     background: rgba(9,18,34,0.95);
     backdrop-filter: blur(18px);
@@ -173,7 +164,6 @@
     position: relative;
   }
 
-  /* Separador entre logo y form */
   .tb-divider {
     display: flex;
     align-items: center;
@@ -192,7 +182,6 @@
     background: rgba(245,158,11,.18);
   }
 
-  /* Errores */
   .tb-error {
     background: rgba(239,68,68,.09);
     border: 1px solid rgba(239,68,68,.25);
@@ -203,7 +192,6 @@
     margin-bottom: 1rem;
   }
 
-  /* Inputs */
   .tb-input-wrap {
     position: relative;
     margin-bottom: .85rem;
@@ -237,7 +225,6 @@
     opacity: .5;
   }
 
-  /* Botón */
   .tb-btn {
     width: 100%;
     margin-top: .4rem;
@@ -261,7 +248,6 @@
   }
   .tb-btn:active { transform: translateY(0); }
 
-  /* Footer */
   .tb-footer {
     position: fixed;
     bottom: 1rem;
@@ -278,14 +264,11 @@
 </head>
 <body>
 
-<!-- Fondo -->
 <div class="tb-bg"></div>
 
-<!-- Orbes -->
 <div class="tb-orb" style="width:280px;height:280px;background:rgba(245,158,11,.07);top:8%;left:3%;--d:10s;--dl:0s;"></div>
 <div class="tb-orb" style="width:180px;height:180px;background:rgba(249,115,22,.05);top:55%;right:6%;--d:12s;--dl:2s;"></div>
 
-<!-- Skyline -->
 <svg class="tb-skyline" viewBox="0 0 1440 400" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
   <defs>
     <linearGradient id="bg1" x1="0" y1="0" x2="0" y2="1">
@@ -297,7 +280,6 @@
       <stop offset="1" stop-color="#060d1a"/>
     </linearGradient>
   </defs>
-  <!-- Capa fondo -->
   <rect x="0"    y="200" width="55"  height="200" fill="url(#bg2)"/>
   <rect x="45"   y="165" width="40"  height="235" fill="url(#bg2)"/>
   <rect x="75"   y="210" width="60"  height="190" fill="url(#bg2)"/>
@@ -334,7 +316,6 @@
   <rect x="1283" y="95"  width="56"  height="305" fill="url(#bg2)"/>
   <rect x="1329" y="205" width="42"  height="195" fill="url(#bg2)"/>
   <rect x="1361" y="145" width="79"  height="255" fill="url(#bg2)"/>
-  <!-- Ventanas fondo -->
   <rect x="55"  y="172" width="7" height="4" fill="#F59E0B" opacity=".55"/>
   <rect x="133" y="142" width="7" height="4" fill="#f97316" opacity=".5"/>
   <rect x="203" y="112" width="7" height="4" fill="#F59E0B" opacity=".6"/>
@@ -349,7 +330,6 @@
   <rect x="1055" y="112" width="7" height="4" fill="#F59E0B" opacity=".55"/>
   <rect x="1133" y="92" width="7" height="4" fill="#f97316" opacity=".5"/>
   <rect x="1291" y="102" width="7" height="4" fill="#F59E0B" opacity=".6"/>
-  <!-- Capa primer plano -->
   <rect x="0"    y="255" width="85"  height="145" fill="url(#bg1)"/>
   <rect x="75"   y="225" width="58"  height="175" fill="url(#bg1)"/>
   <rect x="123"  y="272" width="72"  height="128" fill="url(#bg1)"/>
@@ -374,7 +354,6 @@
   <rect x="1252" y="258" width="62"  height="142" fill="url(#bg1)"/>
   <rect x="1304" y="218" width="73"  height="182" fill="url(#bg1)"/>
   <rect x="1367" y="242" width="73"  height="158" fill="url(#bg1)"/>
-  <!-- Ventanas primer plano -->
   <rect x="18"   y="265" width="9" height="5" fill="#F59E0B" opacity=".8"/>
   <rect x="33"   y="265" width="9" height="5" fill="#F59E0B" opacity=".45"/>
   <rect x="18"   y="278" width="9" height="5" fill="#f97316" opacity=".6"/>
@@ -399,21 +378,17 @@
   <rect x="1375" y="252" width="9" height="5" fill="#f97316" opacity=".6"/>
 </svg>
 
-<!-- Estrellas -->
 <div class="tb-stars" id="tb-stars"></div>
 
-<!-- Contenido principal centrado -->
 <div class="tb-page">
   <div class="tb-wrapper">
 
-    <!-- Logo -->
     <div class="tb-logo">
       <span class="tb-pin">📍</span>
       <span class="tb-brand-name">TuBarrio</span>
-      <span class="tb-brand-sub">Panel de administración · Loncoche</span>
+      <span class="tb-brand-sub">Panel de administración </span>
     </div>
 
-    <!-- Formulario -->
     <div class="tb-form-card">
 
       <div class="tb-divider">Acceso seguro</div>
@@ -456,12 +431,10 @@
   </div>
 </div>
 
-<!-- Footer -->
-<p class="tb-footer">TuBarrio © 2026 — Loncoche, Araucanía</p>
+<p class="tb-footer">TuBarrio © 2026 — KELS</p>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-  // Generar estrellas
   const wrap = document.getElementById('tb-stars');
   for (let i = 0; i < 65; i++) {
     const s = document.createElement('div');

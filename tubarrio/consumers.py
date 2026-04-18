@@ -19,7 +19,6 @@ class NegociosConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.GROUP_NAME, self.channel_name)
         await self.accept()
 
-        # Enviar snapshot inicial con todos los negocios activos
         negocios = await self.get_negocios()
         await self.send(text_data=json.dumps({
             "type": "snapshot",
@@ -29,11 +28,8 @@ class NegociosConsumer(AsyncWebsocketConsumer):
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.GROUP_NAME, self.channel_name)
 
-    # Mensajes recibidos desde el browser (no se usan, pero se manejan)
     async def receive(self, text_data=None, bytes_data=None):
         pass
-
-    # ── Handlers de eventos enviados desde el servidor ──
 
     async def negocio_nuevo(self, event):
         """Un negocio nuevo fue creado."""
@@ -56,18 +52,15 @@ class NegociosConsumer(AsyncWebsocketConsumer):
             "id": event["id"],
         }))
 
-    # ── Helpers de base de datos ──
 
     @database_sync_to_async
-    def get_negocios(self):
-        # Importa aquí para evitar problemas de import circular
-        from .models import Negocio  # ajusta al nombre de tu app
-        qs = Negocio.objects.filter(activo=True)  # ajusta el filtro si es necesario
+    def get_negocios(self):    
+        from .models import Negocio  
+        qs = Negocio.objects.filter(activo=True)
         return [negocio_to_dict(n) for n in qs]
 
 
 def negocio_to_dict(n):
-    """Convierte un objeto Negocio al dict que espera el frontend."""
     return {
         "id":          n.id,
         "nombre":      n.nombre,

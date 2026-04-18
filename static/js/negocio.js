@@ -1,6 +1,4 @@
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* STATE */
-/* ═══════════════════════════════════════════════════════════════════════════ */
+
 let state = {
   nombre:'', cat:'', catIco:'', ciudad:'', comuna:'', dir:'',
   dias:[], desde:'08:00', hasta:'18:00', wsp:'',
@@ -28,9 +26,6 @@ const DOMICILIO_TEXTO = {
   'ambos': '🏠🛵 Local + Delivery',
 };
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* 📸 MANEJO DE FOTOS - VERSIÓN CORREGIDA CON SELECCIÓN MÚLTIPLE             */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 const photoInput = document.getElementById('photoInput');
 
 photoInput.addEventListener('change', (e) => {
@@ -46,7 +41,6 @@ photoInput.addEventListener('change', (e) => {
     return;
   }
 
-  // Calcular los slots vacíos de forma SINCRÓNICA antes de abrir ningún FileReader
   const emptySlots = [];
   for (let i = 0; i < 5; i++) {
     if (!state.photos[i]) emptySlots.push(i);
@@ -58,8 +52,6 @@ photoInput.addEventListener('change', (e) => {
     const slotIndex = emptySlots[i];
     if (slotIndex === undefined) return;
 
-    // ✅ CLAVE: Reservar el slot INMEDIATAMENTE (sincrónico) antes de abrir el reader
-    // Así el siguiente archivo no reutiliza el mismo slot vacío
     state.photos[slotIndex] = { dataUrl: null, file };
 
     const reader = new FileReader();
@@ -77,7 +69,6 @@ photoInput.addEventListener('change', (e) => {
     showToast(`📸 Se agregaron ${availableSlots} fotos. Máximo 5 en total.`);
   }
 
-  // Limpiar el input para poder seleccionar más fotos después
   photoInput.value = '';
 });
 
@@ -115,10 +106,8 @@ function removePhoto(index) {
   const img = slot.querySelector('img');
   const removeBtn = slot.querySelector('.remove-photo');
 
-  // Eliminar del estado
   delete state.photos[index];
 
-  // Resetear UI
   addDiv.style.display = 'flex';
   img.style.display = 'none';
   img.src = '';
@@ -160,9 +149,6 @@ function clearAllPhotos() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* MINI MAPA Y GEOLOCALIZACIÓN */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 let miniMap = null, miniMarker = null;
 
 function initMiniMap(lat, lng) {
@@ -288,9 +274,6 @@ function usarUbicacionActual() {
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* NAVEGACIÓN ENTRE PASOS */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function goStep(n) {
   if (n > currentStep && !validateStep(currentStep)) return;
   if (n === 4) updatePreview();
@@ -364,9 +347,6 @@ function setErr(id, hasErr) {
   if (inp) inp.classList.toggle('err', hasErr);
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* CATEGORÍA Y DÍAS */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function selectCat(el, cat, ico) {
   document.querySelectorAll('.cat-opt').forEach(o => o.classList.remove('selected'));
   el.classList.add('selected');
@@ -387,9 +367,6 @@ function toggleDay(btn, day) {
   updatePreview();
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* UPDATE PREVIEW */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 function updatePreview() {
   const domicilioSelect = document.getElementById('inp-domicilio');
   if (domicilioSelect) state.domicilio = domicilioSelect.value;
@@ -441,7 +418,6 @@ function updatePreview() {
   if (pceCatIco) pceCatIco.textContent = ico;
   if (pceCatName) pceCatName.textContent = catLabel;
 
-  // Solo usar fotos que ya tienen dataUrl (FileReader terminó)
   const mainPhoto = state.photos.find(p => p && p.dataUrl);
   const photoPlaceholder = document.querySelector('.pce-photo-placeholder');
   const photoImg = document.getElementById('pcePhotoImg');
@@ -549,9 +525,6 @@ function updatePreview() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* SUBMIT */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 async function submitForm() {
   const termsCheck = document.getElementById('chk-terms');
   if (!termsCheck || !termsCheck.checked) {
@@ -605,7 +578,6 @@ async function submitForm() {
   formData.append('longitud', state.lng ?? '');
   formData.append('domicilio', state.domicilio);
 
-  // Enviar todas las fotos válidas
   const validPhotos = state.photos.filter(p => p && p.file);
   console.log(`📸 Enviando ${validPhotos.length} fotos al servidor`);
   validPhotos.forEach((photo) => {
@@ -657,9 +629,6 @@ async function submitForm() {
   }
 }
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* UTILS */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 let toastTimer;
 function showToast(msg) {
   clearTimeout(toastTimer);
@@ -683,9 +652,6 @@ window.addEventListener('resize', () => {
 
 const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : '';
 
-/* ═══════════════════════════════════════════════════════════════════════════ */
-/* INICIALIZACIÓN DE EVENT LISTENERS */
-/* ═══════════════════════════════════════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
   // Categorías
   document.querySelectorAll('.cat-opt').forEach(el => {
@@ -704,7 +670,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Foto slots - abrir selector al hacer click en slot vacío
   document.querySelectorAll('.photo-slot').forEach(el => {
     el.addEventListener('click', function(e) {
       if (e.target.classList.contains('remove-photo')) return;
@@ -717,7 +682,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Botones de eliminar foto
   document.querySelectorAll('.remove-photo').forEach(el => {
     el.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -726,13 +690,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
 
-  // Botón limpiar todas las fotos (si existe)
   const clearAllBtn = document.getElementById('clearAllPhotosBtn');
   if (clearAllBtn) {
     clearAllBtn.addEventListener('click', clearAllPhotos);
   }
 
-  // Input events
   const inpNombre    = document.getElementById('inp-nombre');
   const inpDesde     = document.getElementById('inp-desde');
   const inpHasta     = document.getElementById('inp-hasta');
@@ -758,7 +720,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (inpFb)     inpFb.addEventListener('input', updatePreview);
   if (chkWspPub) chkWspPub.addEventListener('change', updatePreview);
 
-  // Botones de navegación
   const btnGpsLoc       = document.getElementById('btnGpsLoc');
   const btnStep2        = document.getElementById('btnStep2');
   const btnBackTo1      = document.getElementById('btnBackTo1');
@@ -778,7 +739,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if (btnBackTo3)       btnBackTo3.addEventListener('click', () => goStep(3));
   if (submitBtn)        submitBtn.addEventListener('click', submitForm);
 
-  // Botones de edición en preview
   const editPhotosBtn   = document.getElementById('editPhotosBtn');
   const editInfoBtn     = document.getElementById('editInfoBtn');
   const editUbicacionBtn= document.getElementById('editUbicacionBtn');
@@ -797,14 +757,12 @@ document.addEventListener('DOMContentLoaded', () => {
   if (qaEditPhotos)     qaEditPhotos.addEventListener('click', () => goStep(2));
   if (qaEditContacto)   qaEditContacto.addEventListener('click', () => goStep(3));
 
-  // Ver mapa
   if (verMapaBtn) {
     verMapaBtn.addEventListener('click', () => {
       window.location.href = '/';
     });
   }
 
-  // Inicializar contadores
   updatePhotoCounter();
   const inpDescElement = document.getElementById('inp-desc');
   if (inpDescElement) {

@@ -13,7 +13,6 @@ from import_export.widgets import ForeignKeyWidget
 from .models import Negocio, ImagenNegocio
 
 
-# ─── CLASE BASE CON BOTONES PERSONALIZADOS ─────────────────────────────────────
 class CustomImportExportAdmin(ImportExportModelAdmin):
     """Admin base con botones Import/Export estilizados"""
     
@@ -93,7 +92,6 @@ class CustomImportExportAdmin(ImportExportModelAdmin):
         return super().changelist_view(request, extra_context)
 
 
-# ─── RESOURCES ─────────────────────────────────────────────────────────────────
 class NegocioResource(resources.ModelResource):
     class Meta:
         model = Negocio
@@ -118,7 +116,6 @@ class ImagenNegocioResource(resources.ModelResource):
         import_id_fields = ['id']
 
 
-# ─── INLINE PARA IMÁGENES (DENTRO DE NEGOCIO) ──────────────────────────────────
 class ImagenNegocioInline(admin.TabularInline):
     model = ImagenNegocio
     extra = 1
@@ -138,7 +135,6 @@ class ImagenNegocioInline(admin.TabularInline):
         return mark_safe('<span style="color:#888;">—</span>')
 
 
-# ─── NEGOCIO ADMIN (CON IMÁGENES DENTRO) ───────────────────────────────────────
 @admin.register(Negocio)
 class NegocioAdmin(CustomImportExportAdmin):
     resource_class = NegocioResource
@@ -158,7 +154,6 @@ class NegocioAdmin(CustomImportExportAdmin):
     list_editable = ('estado', 'verificado')
     date_hierarchy = 'fecha_creacion'
     
-    # ✅ LAS IMÁGENES APARECEN DENTRO DEL FORMULARIO DE NEGOCIO
     inlines = [ImagenNegocioInline]
     
     actions = [
@@ -298,13 +293,6 @@ class NegocioAdmin(CustomImportExportAdmin):
         '''
         return mark_safe(html)
 
-
-# ─── QUITAR IMAGENNEGOCIO DEL MENÚ DEL ADMIN ───────────────────────────────────
-# ❌ NO REGISTRAMOS ImagenNegocio por separado
-# admin.site.register(ImagenNegocio, ImagenNegocioAdmin)  ← ESTO NO VA
-
-
-# ─── DASHBOARD ─────────────────────────────────────────────────────────────────
 MESES_ES = {
     1: 'Ene', 2: 'Feb', 3: 'Mar', 4: 'Abr', 5: 'May', 6: 'Jun',
     7: 'Jul', 8: 'Ago', 9: 'Sep', 10: 'Oct', 11: 'Nov', 12: 'Dic'

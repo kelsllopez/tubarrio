@@ -24,7 +24,6 @@
 
 <div id="map"></div>
 
-<!-- TOPBAR -->
 <div class="topbar" role="banner">
   <div class="logo" aria-label="TuBarrio">Tu<span>Barrio</span><span class="flag" aria-hidden="true"></span></div>
   <div class="search-wrap" id="searchWrap" role="search">
@@ -40,7 +39,6 @@
 </div>
 <div class="sr-only" id="gpsHint">Activa tu GPS para ver negocios cerca y ordenar por distancia.</div>
 
-<!-- FILTROS -->
 <div class="filters" id="filtersBar" role="navigation" aria-label="Filtros por categoría">
   <button class="fcat on" onclick="filterBy(this,'all')" aria-pressed="true" data-cat="all">🗂 Todos</button>
   <button class="fcat" onclick="filterBy(this,'comida')" aria-pressed="false" data-cat="comida">
@@ -63,7 +61,6 @@
   </button>
 </div>
 
-<!-- PANEL -->
 <div class="panel hidden" id="panel">
   <div class="panel-head">
     <h3>Negocios</h3>
@@ -81,19 +78,15 @@
 </div>
 <button class="btn-open-panel" id="openPanelBtn" onclick="togglePanel()" aria-label="Ver lista">≡ Lista</button>
 
-<!-- ZONA INFO -->
 <div class="zone-info">📍 <strong id="zoneCount">0</strong> negocios</div>
 
-<!-- LIVE BADGE -->
 <div class="live-badge" id="liveBadge">
   <div class="live-dot"></div>
   <span>En vivo · <strong id="liveCount">0</strong> negocios</span>
 </div>
 
-<!-- STATUS (errores / carga) -->
 <div class="statusbar" id="statusBar" aria-live="polite" aria-atomic="true"></div>
 
-<!-- MODAL CON PESTAÑAS -->
 <div class="modal-ov" id="detailModal" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="m-banner" id="mBanner"></div>
@@ -101,13 +94,11 @@
       <div class="m-name" id="mName"></div>
       <div class="m-catl" id="mCat"></div>
       
-      <!-- PESTAÑAS -->
       <div class="m-tabs">
         <button class="m-tab active" id="tabDetalles" onclick="switchTab('detalles')">📋 Detalles</button>
         <button class="m-tab" id="tabFotos" onclick="switchTab('fotos')">📸 Fotos <span class="m-tab-count" id="fotosCount">0</span></button>
       </div>
       
-      <!-- CONTENIDO DE PESTAÑAS -->
       <div class="m-tab-content active" id="contentDetalles">
       <div class="m-info" id="mInfo" style="display:flex;flex-direction:column;gap:12px;"></div>
       </div>
@@ -124,7 +115,6 @@
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <noscript><div class="noscript">Necesitas JavaScript para usar el mapa de TuBarrio.</div></noscript>
 
-<!-- Datos y URLs inyectadas de forma segura para el JS externo -->
 <script>
   window.TB_CONFIG = {
     negocios:     {{ negocios_json|safe }},

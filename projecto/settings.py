@@ -9,7 +9,13 @@ https://docs.djangoproject.com/en/6.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
+ 
+import os
 
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
+from dotenv import load_dotenv
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -45,6 +51,7 @@ INSTALLED_APPS = [
     'cloudinary', 
     'cloudinary_storage', 
     'tubarrio',
+    'django_extensions', 
 
 ]
 
@@ -93,10 +100,8 @@ DATABASES = {
     )
 }
 
-# ─── CONNECTION POOLING PARA POSTGRESQL ─────────────────────────────────
-DATABASES['default']['CONN_MAX_AGE'] = 600  # 10 minutos
+DATABASES['default']['CONN_MAX_AGE'] = 600  
 
-# Actualizar o crear OPTIONS (dj_database_url ya puede tener algunas)
 if 'OPTIONS' not in DATABASES['default']:
     DATABASES['default']['OPTIONS'] = {}
 
@@ -139,24 +144,14 @@ TIME_ZONE = 'America/Santiago'
 USE_I18N = True
 
 USE_TZ = True
- 
-import os
 
-# ─── CLOUDINARY CONFIGURATION ────────────────────────────────────────────────
-import cloudinary
-import cloudinary.uploader
-import cloudinary.api
-from dotenv import load_dotenv
 
-# Cargar variables de entorno desde .env
 load_dotenv()
 
-# Tomar valores del archivo .env
 CLOUDINARY_CLOUD_NAME = os.getenv('CLOUDINARY_CLOUD_NAME')
 CLOUDINARY_API_KEY = os.getenv('CLOUDINARY_API_KEY')
 CLOUDINARY_API_SECRET = os.getenv('CLOUDINARY_API_SECRET')
 
-# Configurar cloudinary
 cloudinary.config(
     cloud_name=CLOUDINARY_CLOUD_NAME,
     api_key=CLOUDINARY_API_KEY,
@@ -164,7 +159,6 @@ cloudinary.config(
     secure=True
 )
 
-# Configuración para django-cloudinary-storage
 CLOUDINARY_STORAGE = {
     'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
     'API_KEY': CLOUDINARY_API_KEY,
@@ -173,7 +167,6 @@ CLOUDINARY_STORAGE = {
     'STATIC_IMAGES_FORMAT': 'auto',      
 }
 
-# Usar Cloudinary para archivos media
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 
@@ -188,15 +181,11 @@ STATICFILES_DIRS = [
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
-# Media files - USANDO CLOUDINARY
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
-# URLs de media (ya no se usa MEDIA_ROOT ni MEDIA_URL porque Cloudinary lo maneja)
-MEDIA_URL = '/media/'  # Esto será manejado por Cloudinary
-MEDIA_ROOT = BASE_DIR / 'media'  # Solo para desarrollo local
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
-
-# ─── CHANNELS (WebSockets) ───────────────────────────────────────────────────
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels.layers.InMemoryChannelLayer",
@@ -204,20 +193,17 @@ CHANNEL_LAYERS = {
 }
 
 
-# ─── CACHÉ OPTIMIZADO ────────────────────────────────────────────────────────
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
         'LOCATION': 'tubarrio_cache',
-        'TIMEOUT': 600,  # 10 minutos
+        'TIMEOUT': 600, 
         'OPTIONS': {
             'MAX_ENTRIES': 5000,
         }
     }
 }
 
-
-# ─── JAZZMIN SETTINGS (Diseño optimizado) ────────────────────────────────────
 JAZZMIN_SETTINGS = {
     # Identidad
     "site_title": "TuBarrio Admin",
@@ -225,15 +211,12 @@ JAZZMIN_SETTINGS = {
     "site_brand": "📍 TuBarrio",
     "site_logo": None,
     "welcome_sign": "Bienvenido al panel de TuBarrio 🏘️",
-    "copyright": "TuBarrio — Loncoche © 2026",
+    "copyright": "TuBarrio — Todos los derechos reservados KELS © 2026",
 
-    # Tema y modo oscuro
     "default_theme_mode": "dark",
     
-    # Selector de idiomas
     "language_chooser": False,
 
-    # Íconos del menú lateral
     "icons": {
         "auth": "fas fa-users-cog",
         "auth.user": "fas fa-user",
@@ -244,22 +227,18 @@ JAZZMIN_SETTINGS = {
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",
 
-    # Menú lateral
     "order_with_respect_to": ["tubarrio", "auth"],
     
-    # Navegación superior
     "topmenu_links": [
         {"name": "Inicio", "url": "admin:index"},
         {"name": "Ver sitio", "url": "/", "new_window": True},
         {"name": "+ Agregar Negocio", "url": "admin:tubarrio_negocio_add", "icon": "fas fa-plus"},
     ],
 
-    # Barra de usuario
     "usermenu_links": [
         {"name": "Ver sitio", "url": "/", "new_window": True, "icon": "fas fa-globe"},
     ],
 
-    # UI - OPTIMIZADA
     "show_sidebar": True,
     "navigation_expanded": False,
     "hide_apps": [],
@@ -305,7 +284,6 @@ JAZZMIN_UI_TWEAKS = {
 }
 
 
-# ─── REST FRAMEWORK ──────────────────────────────────────────────────────────
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 50,
@@ -315,12 +293,10 @@ REST_FRAMEWORK = {
 }
 
 
-# ─── DATA UPLOAD LIMITS ──────────────────────────────────────────────────────
 DATA_UPLOAD_MAX_NUMBER_FIELDS = 1000
 DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760  # 10MB para imágenes
 
 
-# ─── SECURITY (para producción) ──────────────────────────────────────────────
 if not DEBUG:
     SECURE_SSL_REDIRECT = True
     SESSION_COOKIE_SECURE = True

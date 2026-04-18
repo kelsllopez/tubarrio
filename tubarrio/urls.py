@@ -13,5 +13,4 @@ urlpatterns = [
     path('api/healthz/', views.healthz, name='healthz'),
 ]
 
-# Endpoints DRF (si se usan) además de las vistas normales
 urlpatterns += router.urls

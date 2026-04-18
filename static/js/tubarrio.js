@@ -154,9 +154,6 @@ function getEstadoAbiertoBadge(diasStr) {
   }
 }
 
-/* ════════════════════════════
-   DATOS — inyectados desde el template vía window.TB_CONFIG
-════════════════════════════ */
 
 const TB_CONFIG = (window.TB_CONFIG && typeof window.TB_CONFIG === 'object') ? window.TB_CONFIG : {};
 const TB_STORAGE_KEY = 'tubarrio:v1';
@@ -237,9 +234,7 @@ let NEGOCIOS          = normalizeNegocios(TB_CONFIG.negocios);
 const URL_REGISTRAR   = TB_CONFIG.urlRegistrar;
 const URL_API         = TB_CONFIG.urlApi;
 
-/* ════════════════════════════
-   STATE
-════════════════════════════ */
+
 
 let currentCat = 'all', currentSearch = '', currentSort = 'default';
 let panelOpen = false, userLat = null, userLng = null;
@@ -259,9 +254,7 @@ function adjustFiltersTop(){
   if(tb && fl) fl.style.top = tb.offsetHeight + 'px';
 }
 
-/* ════════════════════════════
-   EMPTY — aparece si no hay negocios
-════════════════════════════ */
+
 
 function checkEmpty(){
   const existing = document.querySelector('.empty-map');
@@ -339,9 +332,7 @@ function initMap(){
   document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeDetail(); closeNearbyAlert(); } });
 }
 
-/* ════════════════════════════
-   POLLING
-════════════════════════════ */
+
 
 function schedulePoll(ms){
   setTimeout(pollNegocios, Math.max(300, ms));
@@ -432,9 +423,7 @@ function bumpBadge(){
   b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
 }
 
-/* ════════════════════════════
-   ICONOS PARA MARCADORES DEL MAPA
-════════════════════════════ */
+
 
 function makeIcon(cat){
   const color = catColor(cat), emo = catIco(cat), size = 44, r = 13;
@@ -454,9 +443,7 @@ function makeIcon(cat){
   });
 }
 
-/* ════════════════════════════
-   POPUP
-════════════════════════════ */
+
 
 function popupHTML(n){
   const wspNum = n.whatsapp ? n.whatsapp.replace(/\D/g, '') : '';
@@ -469,7 +456,6 @@ function popupHTML(n){
     ? '<span class="estado-badge-popup abierto">🟢 Abierto ahora</span>' 
     : '<span class="estado-badge-popup cerrado">⚪ Cerrado</span>';
   
-  // ✅ DOMICILIO SIEMPRE VISIBLE
   const domicilioBadge = `<span class="domicilio-badge-popup ${n.domicilio || 'no'}" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;">${getDomicilioIcono(n.domicilio || 'no')} ${getDomicilioTexto(n.domicilio || 'no')}</span>`;
 
   let imgHtml = '';
@@ -497,9 +483,7 @@ function popupHTML(n){
   </div>`;
 }
 
-/* ════════════════════════════
-   FILTRADO / ORDEN
-════════════════════════════ */
+
 
 function filtered(){
   const q = normText(currentSearch);
@@ -527,9 +511,6 @@ function sorted(list){
   return list;
 }
 
-/* ════════════════════════════
-   RENDER
-════════════════════════════ */
 
 function renderAll(newOrUpdatedIds = new Set()){
   let list = sorted(filtered());
@@ -574,7 +555,6 @@ function renderList(list, newOrUpdatedIds = new Set()){
     const verificadoBadge = n.verificado ? '<span class="verified-badge-list" title="Negocio verificado">✓</span>' : '';
     const ubicacionCompleta = [n.dir, n.comuna, n.ciudad].filter(Boolean).join(', ');
     
-    // ✅ DOMICILIO SIEMPRE VISIBLE
     const domicilioBadge = getDomicilioBadge(n.domicilio || 'no');
 
     const imgHtml = `<div class="neg-ico" style="background:${catBg(n.cat)}">${catIco(n.cat)}</div>`;
@@ -624,9 +604,7 @@ function renderList(list, newOrUpdatedIds = new Set()){
   requestAnimationFrame(pump);
 }
 
-/* ════════════════════════════
-   UI
-════════════════════════════ */
+
 
 function highlightCard(id){
   document.querySelectorAll('.neg').forEach(e => e.classList.remove('active'));
@@ -643,9 +621,7 @@ function focusNeg(id){
   setTimeout(() => activeMarkers[id]?.openPopup(), 1000);
 }
 
-/* ════════════════════════════
-   FILTER BY CATEGORIA
-════════════════════════════ */
+
 
 function filterBy(btn, cat){
   document.querySelectorAll('.fcat').forEach(b => b.classList.remove('on'));
@@ -738,9 +714,7 @@ function togglePanel(forceOpen){
   setTimeout(() => map?.invalidateSize(), 360);
 }
 
-/* ════════════════════════════
-   GPS
-════════════════════════════ */
+
 
 function dist(lat1, lng1, lat2, lng2){
   const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
@@ -842,10 +816,6 @@ function useGPS(){
   );
 }
 
-/* ════════════════════════════
-   NEARBY ALERT
-════════════════════════════ */
-
 function showNearbyAlert(nearest, distKm, cat){
   closeNearbyAlert();
 
@@ -876,9 +846,6 @@ function goToNearest(id){
   setTimeout(() => openDetail(id), 1300);
 }
 
-/* ════════════════════════════
-   MODAL CON PESTAÑAS - DETALLES | FOTOS
-════════════════════════════ */
 
 let currentNegocioId = null;
 let currentNegocioData = null;
@@ -948,7 +915,6 @@ function openDetail(id){
   const estadoAbierto = verificarAbiertoAhora(n.dias);
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span style="color:${estadoAbierto.abierto ? 'var(--sage)' : 'var(--dust)'};font-weight:600">${estadoAbierto.mensaje}</span></div>`;
 
-  // ✅ DOMICILIO SIEMPRE VISIBLE
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg><span><strong>Delivery:</strong> ${getDomicilioTexto(n.domicilio || 'no')}</span></div>`;
 
   if(n.instagram){
@@ -1021,9 +987,6 @@ function closeDetail(){
   currentNegocioData = null;
 }
 
-/* ════════════════════════════
-   VISOR DE IMÁGENES MEJORADO (CARRUSEL GRANDE)
-════════════════════════════ */
 
 function openImageViewer(startIndex, imagenesString) {
   let imagenes;
@@ -1143,9 +1106,6 @@ document.getElementById('detailModal')?.addEventListener('click', e => {
   if(e.target === e.currentTarget) closeDetail();
 });
 
-/* ════════════════════════════
-   TOAST
-════════════════════════════ */
 
 let toastTimer;
 function showToast(msg, duration = 3500){
