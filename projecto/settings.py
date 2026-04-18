@@ -209,7 +209,7 @@ JAZZMIN_SETTINGS = {
     "site_title": "TuBarrio Admin",
     "site_header": "TuBarrio",
     "site_brand": "📍 TuBarrio",
-    "site_logo": None,
+    "site_logo": "img/logo.png",
     "welcome_sign": "Bienvenido al panel de TuBarrio 🏘️",
     "copyright": "TuBarrio — Todos los derechos reservados KELS © 2026",
 
