@@ -1,3 +1,4 @@
+
 /* ════════════════════════════
    CATEGORÍAS
 ════════════════════════════ */
@@ -154,7 +155,6 @@ function getEstadoAbiertoBadge(diasStr) {
   }
 }
 
-
 const TB_CONFIG = (window.TB_CONFIG && typeof window.TB_CONFIG === 'object') ? window.TB_CONFIG : {};
 const TB_STORAGE_KEY = 'tubarrio:v1';
 
@@ -234,8 +234,6 @@ let NEGOCIOS          = normalizeNegocios(TB_CONFIG.negocios);
 const URL_REGISTRAR   = TB_CONFIG.urlRegistrar;
 const URL_API         = TB_CONFIG.urlApi;
 
-
-
 let currentCat = 'all', currentSearch = '', currentSort = 'default';
 let panelOpen = false, userLat = null, userLng = null;
 let map, markersLayer, activeMarkers = {}, userMarker = null;
@@ -253,8 +251,6 @@ function adjustFiltersTop(){
   const fl = document.getElementById('filtersBar');
   if(tb && fl) fl.style.top = tb.offsetHeight + 'px';
 }
-
-
 
 function checkEmpty(){
   const existing = document.querySelector('.empty-map');
@@ -331,8 +327,6 @@ function initMap(){
   schedulePoll(800);
   document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeDetail(); closeNearbyAlert(); } });
 }
-
-
 
 function schedulePoll(ms){
   setTimeout(pollNegocios, Math.max(300, ms));
@@ -423,8 +417,6 @@ function bumpBadge(){
   b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump');
 }
 
-
-
 function makeIcon(cat){
   const color = catColor(cat), emo = catIco(cat), size = 44, r = 13;
   const id = `sf_${cat}`;
@@ -442,8 +434,6 @@ function makeIcon(cat){
     popupAnchor: [0, -Math.round(size * 1.3) - 2]
   });
 }
-
-
 
 function popupHTML(n){
   const wspNum = n.whatsapp ? n.whatsapp.replace(/\D/g, '') : '';
@@ -480,10 +470,9 @@ function popupHTML(n){
   <div class="pu-foot">
     <button class="pu-btn pu-p" onclick="openDetail(${n.id})">Ver detalle →</button>
     ${wspBtn}
+    <button class="pu-btn report-btn-popup" onclick="abrirReporte(${n.id}, '${n.nombre.replace(/'/g, "\\'")}')" title="Reportar problema">⚠️</button>
   </div>`;
 }
-
-
 
 function filtered(){
   const q = normText(currentSearch);
@@ -510,7 +499,6 @@ function sorted(list){
   });
   return list;
 }
-
 
 function renderAll(newOrUpdatedIds = new Set()){
   let list = sorted(filtered());
@@ -604,8 +592,6 @@ function renderList(list, newOrUpdatedIds = new Set()){
   requestAnimationFrame(pump);
 }
 
-
-
 function highlightCard(id){
   document.querySelectorAll('.neg').forEach(e => e.classList.remove('active'));
   const c = document.getElementById('neg-' + id);
@@ -620,8 +606,6 @@ function focusNeg(id){
   map.flyTo([n.lat, n.lng], 16, {duration: 1.2});
   setTimeout(() => activeMarkers[id]?.openPopup(), 1000);
 }
-
-
 
 function filterBy(btn, cat){
   document.querySelectorAll('.fcat').forEach(b => b.classList.remove('on'));
@@ -713,8 +697,6 @@ function togglePanel(forceOpen){
   document.body.classList.toggle('panel-open', panelOpen);
   setTimeout(() => map?.invalidateSize(), 360);
 }
-
-
 
 function dist(lat1, lng1, lat2, lng2){
   const R = 6371, dLat = (lat2 - lat1) * Math.PI / 180, dLng = (lng2 - lng1) * Math.PI / 180;
@@ -846,7 +828,6 @@ function goToNearest(id){
   setTimeout(() => openDetail(id), 1300);
 }
 
-
 let currentNegocioId = null;
 let currentNegocioData = null;
 
@@ -971,6 +952,7 @@ function openDetail(id){
     const u = n.facebook.startsWith('http') ? n.facebook : `https://facebook.com/${n.facebook}`; 
     actions += `<a class="ma ma-fb" href="${u}" target="_blank" rel="noopener">📘 Facebook</a>`; 
   }
+  actions += `<button class="ma report-btn-modal" onclick="abrirReporte(${n.id}, '${n.nombre.replace(/'/g, "\\'")}'); closeDetail();">⚠️ Reportar problema</button>`;
   actions += `<button class="ma ma-s" onclick="closeDetail()">Cerrar</button>`;
   mActions.innerHTML = actions;
 
@@ -986,7 +968,6 @@ function closeDetail(){
   currentNegocioId = null;
   currentNegocioData = null;
 }
-
 
 function openImageViewer(startIndex, imagenesString) {
   let imagenes;
@@ -1106,7 +1087,6 @@ document.getElementById('detailModal')?.addEventListener('click', e => {
   if(e.target === e.currentTarget) closeDetail();
 });
 
-
 let toastTimer;
 function showToast(msg, duration = 3500){
   const t = document.getElementById('toast');
@@ -1114,5 +1094,141 @@ function showToast(msg, duration = 3500){
   clearTimeout(toastTimer); t.textContent = msg; t.classList.add('show');
   toastTimer = setTimeout(() => t.classList.remove('show'), duration);
 }
+
+/* ════════════════════════════
+   FUNCIONES DE REPORTE
+════════════════════════════ */
+
+let reporteNegocioId = null;
+
+function abrirReporte(negocioId, negocioNombre) {
+  reporteNegocioId = negocioId;
+  const modal = document.getElementById('modalReporte');
+  const inputNegocioId = document.getElementById('reporte_negocio_id');
+  const titulo = document.getElementById('reporteModalTitulo');
+  
+  if (inputNegocioId) inputNegocioId.value = negocioId;
+  if (titulo && negocioNombre) {
+    titulo.innerHTML = `⚠️ Reportar: ${negocioNombre.substring(0, 40)}`;
+  }
+  
+  const form = document.getElementById('formReporte');
+  const exitoDiv = document.getElementById('reporteExito');
+  if (form) form.style.display = 'block';
+  if (exitoDiv) exitoDiv.style.display = 'none';
+  if (form) form.reset();
+  
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function abrirReporteGeneral() {
+  reporteNegocioId = null;
+  const modal = document.getElementById('modalReporte');
+  const inputNegocioId = document.getElementById('reporte_negocio_id');
+  const titulo = document.getElementById('reporteModalTitulo');
+  
+  if (inputNegocioId) inputNegocioId.value = '';
+  if (titulo) titulo.innerHTML = '⚠️ Reportar problema general';
+  
+  const form = document.getElementById('formReporte');
+  const exitoDiv = document.getElementById('reporteExito');
+  if (form) form.style.display = 'block';
+  if (exitoDiv) exitoDiv.style.display = 'none';
+  if (form) form.reset();
+  
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalReporte() {
+  const modal = document.getElementById('modalReporte');
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+  reporteNegocioId = null;
+}
+
+document.getElementById('formReporte')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const tipo = document.getElementById('reporte_tipo')?.value;
+  const descripcion = document.getElementById('reporte_desc')?.value;
+  const email = document.getElementById('reporte_email')?.value;
+  const privacidad = document.getElementById('reporte_privacidad')?.checked;
+  const negocioId = document.getElementById('reporte_negocio_id')?.value;
+  
+  if (!tipo || !descripcion) {
+    showToast('❌ Completa todos los campos requeridos', 2500);
+    return;
+  }
+  
+  if (!privacidad) {
+    showToast('📋 Acepta la política de privacidad para continuar', 2500);
+    return;
+  }
+  
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  const originalText = submitBtn.innerHTML;
+  submitBtn.innerHTML = '<div class="spinner"></div> Enviando...';
+  submitBtn.disabled = true;
+  
+  try {
+    const formData = new FormData();
+    formData.append('negocio_id', negocioId || '');
+    formData.append('tipo', tipo);
+    formData.append('descripcion', descripcion);
+    formData.append('email', email || '');
+    
+    const urlApiReporte = '/api/reportar/';
+    
+    const response = await fetch(urlApiReporte, {
+      method: 'POST',
+      body: formData,
+      headers: {
+        'X-CSRFToken': getCookie('csrftoken')
+      }
+    });
+    
+    if (response.ok) {
+      const formElement = document.getElementById('formReporte');
+      const exitoDiv = document.getElementById('reporteExito');
+      if (formElement) formElement.style.display = 'none';
+      if (exitoDiv) exitoDiv.style.display = 'block';
+      
+      showToast('✅ Reporte enviado, ¡gracias por ayudar a TuBarrio!', 3500);
+      
+      setTimeout(() => {
+        cerrarModalReporte();
+      }, 3000);
+    } else {
+      throw new Error('Error al enviar');
+    }
+  } catch (error) {
+    console.error('Error:', error);
+    showToast('❌ Error al enviar, intenta de nuevo más tarde', 3500);
+  } finally {
+    submitBtn.innerHTML = originalText;
+    submitBtn.disabled = false;
+  }
+});
+
+function getCookie(name) {
+  let cookieValue = null;
+  if (document.cookie && document.cookie !== '') {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const cookie = cookies[i].trim();
+      if (cookie.substring(0, name.length + 1) === (name + '=')) {
+        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+        break;
+      }
+    }
+  }
+  return cookieValue;
+}
+
+document.getElementById('modalReporte')?.addEventListener('click', e => {
+  if (e.target === e.currentTarget) cerrarModalReporte();
+});
 
 window.addEventListener('load', initMap);

@@ -4,64 +4,29 @@ import json
 import hashlib
 from django.shortcuts import render, redirect
 from django.http import JsonResponse, HttpResponse
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 from django.views.decorators.cache import cache_control
+from django.views.decorators.csrf import csrf_exempt
 from django.utils.http import http_date
 from django.utils.timezone import now
 from django.utils.dateparse import parse_datetime
 from django.core.cache import cache
 from django.db import connection
 from django.db import models
-from .models import Negocio, ImagenNegocio
+from django.contrib import messages
+from django.core.mail import send_mail
+from .models import Negocio, ImagenNegocio, Reporte
 from .rate_limit import is_rate_limited
 from rest_framework import viewsets
 from rest_framework.pagination import PageNumberPagination
 from .serializers import NegocioSerializer
 
 
+# ============================================================
+# CONSTANTES Y CONFIGURACIÓN
+# ============================================================
+
 _geocode_memory_cache = {}
-
-
-def _geocode_cache_key(direccion: str, comuna: str, ciudad: str) -> str:
-    raw = '|'.join((direccion or '', comuna or '', ciudad or '')).strip().lower()
-    return hashlib.sha256(raw.encode('utf-8')).hexdigest()[:64]
-
-
-def geocode(direccion, comuna='', ciudad='Chile'):
-    """
-    Convierte dirección en lat/lng usando OpenStreetMap Nominatim.
-    Usa caché en memoria y caché de Django.
-    """
-    clave = _geocode_cache_key(direccion, comuna, ciudad)
-    
-    cached = cache.get(f'geocode_{clave}')
-    if cached:
-        return cached['lat'], cached['lng']
-    
-    if clave in _geocode_memory_cache:
-        lat, lng = _geocode_memory_cache[clave]
-        cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)  # 30 días
-        return lat, lng
-
-    texto = ', '.join(filter(None, [direccion, comuna, ciudad]))
-    query = urllib.parse.quote(texto)
-    url = f'https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1'
-    req = urllib.request.Request(url, headers={'User-Agent': 'TuBarrio/1.0'})
-    
-    try:
-        with urllib.request.urlopen(req, timeout=4) as r:
-            data = json.loads(r.read())
-            if data:
-                lat, lng = float(data[0]['lat']), float(data[0]['lon'])
-                # Guardar en caché
-                _geocode_memory_cache[clave] = (lat, lng)
-                cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)
-                return lat, lng
-    except Exception:
-        pass
-    
-    return None, None
-
 
 TIPOS_VALIDOS = {
     'mini_market',
@@ -91,6 +56,54 @@ BBOX_MAX_SPAN_DEG = 2.0
 API_MAX_LIMIT = 2000
 API_DEFAULT_LIMIT = 500
 
+
+# ============================================================
+# FUNCIONES DE GEOCODIFICACIÓN
+# ============================================================
+
+def _geocode_cache_key(direccion: str, comuna: str, ciudad: str) -> str:
+    raw = '|'.join((direccion or '', comuna or '', ciudad or '')).strip().lower()
+    return hashlib.sha256(raw.encode('utf-8')).hexdigest()[:64]
+
+
+def geocode(direccion, comuna='', ciudad='Chile'):
+    """
+    Convierte dirección en lat/lng usando OpenStreetMap Nominatim.
+    Usa caché en memoria y caché de Django.
+    """
+    clave = _geocode_cache_key(direccion, comuna, ciudad)
+    
+    cached = cache.get(f'geocode_{clave}')
+    if cached:
+        return cached['lat'], cached['lng']
+    
+    if clave in _geocode_memory_cache:
+        lat, lng = _geocode_memory_cache[clave]
+        cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)
+        return lat, lng
+
+    texto = ', '.join(filter(None, [direccion, comuna, ciudad]))
+    query = urllib.parse.quote(texto)
+    url = f'https://nominatim.openstreetmap.org/search?q={query}&format=json&limit=1'
+    req = urllib.request.Request(url, headers={'User-Agent': 'TuBarrio/1.0'})
+    
+    try:
+        with urllib.request.urlopen(req, timeout=4) as r:
+            data = json.loads(r.read())
+            if data:
+                lat, lng = float(data[0]['lat']), float(data[0]['lon'])
+                _geocode_memory_cache[clave] = (lat, lng)
+                cache.set(f'geocode_{clave}', {'lat': lat, 'lng': lng}, timeout=86400 * 30)
+                return lat, lng
+    except Exception:
+        pass
+    
+    return None, None
+
+
+# ============================================================
+# FUNCIONES AUXILIARES
+# ============================================================
 
 def _negocio_dict(n, include_updated: bool = True):
     """Convierte un diccionario de negocio al formato esperado por el frontend"""
@@ -141,6 +154,10 @@ def _parse_bbox(bbox: str):
         return None
 
 
+# ============================================================
+# VISTAS PRINCIPALES
+# ============================================================
+
 def index(request):
     """Vista principal que muestra el mapa con todos los negocios aprobados"""
     negocios_qs = Negocio.objects.filter(estado='aprobado').prefetch_related('imagenes').order_by('-fecha_creacion')
@@ -185,6 +202,189 @@ def index(request):
 
     return render(request, 'index.html', {'negocios_json': negocios_json})
 
+
+def ingresa_tu_negocio(request):
+    """Vista para registrar un nuevo negocio"""
+    if request.method == 'POST':
+        if is_rate_limited(request, 'ingresa_negocio', limit=10, window_seconds=3600):
+            return HttpResponse(
+                'Demasiados intentos de registro desde esta IP. Intenta más tarde.',
+                status=429,
+                content_type='text/plain; charset=utf-8',
+            )
+
+        nombre = request.POST.get('nombre', '').strip()
+        descripcion = request.POST.get('descripcion', '').strip()
+        direccion = request.POST.get('direccion', '').strip()
+        comuna = request.POST.get('comuna', '').strip()
+        ciudad = request.POST.get('ciudad', 'Chile').strip()
+        dias_atencion = request.POST.get('dias_atencion', '').strip()
+        
+        domicilio = request.POST.get('domicilio', 'no').strip()
+        if domicilio not in ['no', 'si', 'ambos']:
+            domicilio = 'no'
+        
+        tipo_recibido = request.POST.get('tipo', '').strip()
+        tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
+        
+        wsp_publico = request.POST.get('wsp_publico', 'no').strip()
+        whatsapp_raw = request.POST.get('whatsapp', '').strip() or None
+        whatsapp = whatsapp_raw if wsp_publico == 'si' else None
+        
+        instagram = request.POST.get('instagram', '').strip() or None
+        facebook = request.POST.get('facebook', '').strip() or None
+        
+        lat_raw = request.POST.get('latitud', '').strip()
+        lng_raw = request.POST.get('longitud', '').strip()
+        try:
+            latitud = float(lat_raw) if lat_raw else None
+            longitud = float(lng_raw) if lng_raw else None
+        except ValueError:
+            latitud = longitud = None
+
+        if latitud is None or longitud is None:
+            latitud, longitud = geocode(direccion, comuna, ciudad)
+
+        negocio = Negocio.objects.create(
+            nombre=nombre,
+            tipo=tipo,
+            descripcion=descripcion,
+            direccion=direccion,
+            comuna=comuna,
+            ciudad=ciudad or 'Chile',
+            latitud=latitud,
+            longitud=longitud,
+            dias_atencion=dias_atencion,
+            domicilio=domicilio,
+            whatsapp=whatsapp,
+            instagram=instagram,
+            facebook=facebook,
+            estado='pendiente',
+        )
+        
+        imagenes = request.FILES.getlist('imagenes')
+        
+        if not imagenes:
+            i = 0
+            while True:
+                imagen_key = f'imagen_{i}'
+                if imagen_key in request.FILES:
+                    imagenes.append(request.FILES[imagen_key])
+                    i += 1
+                else:
+                    break
+        
+        for key in request.FILES.keys():
+            if key.startswith('imagen_') and key not in [f'imagen_{i}' for i in range(len(imagenes))]:
+                imagenes.append(request.FILES[key])
+        
+        imagenes_guardadas = 0
+        for imagen in imagenes:
+            if imagen: 
+                try:
+                    ImagenNegocio.objects.create(
+                        negocio=negocio,
+                        imagen=imagen
+                    )
+                    imagenes_guardadas += 1
+                except Exception as e:
+                    print(f"Error al guardar imagen: {e}")
+        
+        print(f"📸 Negocio '{nombre}' creado con {imagenes_guardadas} imágenes")
+        
+        total_fotos = request.POST.get('total_fotos', '0')
+        if total_fotos.isdigit() and int(total_fotos) > 0 and imagenes_guardadas == 0:
+            print(f"⚠️ ADVERTENCIA: Se esperaban {total_fotos} fotos pero no se guardó ninguna")
+        
+        cache.delete('dashboard_stats')
+        
+        return redirect('index')
+
+    return render(request, 'negocio.html')
+
+
+# ============================================================
+# VISTAS DE CONTACTO
+# ============================================================
+
+def contacto(request):
+    return render(request, 'contacto.html')
+
+
+def contacto_enviar(request):
+    if request.method == 'POST':
+        nombre = request.POST.get('nombre')
+        email = request.POST.get('email')
+        asunto = request.POST.get('asunto')
+        mensaje = request.POST.get('mensaje')
+        
+        send_mail(
+            f'[TuBarrio] {asunto} - {nombre}',
+            f'De: {email}\n\n{mensaje}',
+            email,
+            ['tubarriochile@gmail.com'],
+            fail_silently=False,
+        )
+        messages.success(request, 'Mensaje enviado correctamente. Te responderemos pronto.')
+        return redirect('contacto')
+    
+    return redirect('contacto')
+
+
+# ============================================================
+# API REPORTES
+# ============================================================
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_reportar(request):
+    """API para recibir reportes de problemas desde el frontend"""
+    try:
+        negocio_id = request.POST.get('negocio_id')
+        tipo = request.POST.get('tipo')
+        descripcion = request.POST.get('descripcion')
+        email = request.POST.get('email')
+        
+        # Validar campos requeridos
+        if not tipo or not descripcion:
+            return JsonResponse(
+                {'status': 'error', 'message': 'Los campos tipo y descripción son requeridos'},
+                status=400
+            )
+        
+        # Guardar en base de datos
+        reporte = Reporte.objects.create(
+            negocio_id=negocio_id if negocio_id and negocio_id != '' else None,
+            tipo=tipo,
+            descripcion=descripcion,
+            email_reporte=email if email else None,
+            ip=request.META.get('REMOTE_ADDR')
+        )
+        
+        # Enviar notificación al admin (opcional - puede fallar silenciosamente)
+        try:
+            send_mail(
+                f'[REPORTE TuBarrio Chile ] Nuevo problema - {tipo}',
+                f'ID Reporte: {reporte.id}\nNegocio ID: {negocio_id or "General"}\n'
+                f'Tipo: {tipo}\nDescripción: {descripcion}\nEmail: {email or "No proporcionado"}\n'
+                f'IP: {request.META.get("REMOTE_ADDR")}',
+                'tubarriochile@gmail.com',
+                ['tubarriochile@gmail.com'],
+                fail_silently=True,
+            )
+        except Exception as e:
+            print(f"Error al enviar email de notificación: {e}")
+        
+        return JsonResponse({'status': 'ok', 'id': reporte.id})
+        
+    except Exception as e:
+        print(f"Error en api_reportar: {e}")
+        return JsonResponse({'status': 'error', 'message': str(e)}, status=500)
+
+
+# ============================================================
+# API NEGOCIOS (POLLING)
+# ============================================================
 
 @require_GET
 @cache_control(no_cache=True)
@@ -302,6 +502,10 @@ def api_negocios(request):
     return resp
 
 
+# ============================================================
+# HEALTH CHECK
+# ============================================================
+
 @require_GET
 def healthz(request):
     """GET /api/healthz/ — DB y app vivos."""
@@ -314,108 +518,9 @@ def healthz(request):
     return JsonResponse({'ok': ok, 'service': 'tubarrio'}, status=status)
 
 
-def ingresa_tu_negocio(request):
-    """Vista para registrar un nuevo negocio"""
-    if request.method == 'POST':
-        if is_rate_limited(request, 'ingresa_negocio', limit=10, window_seconds=3600):
-            return HttpResponse(
-                'Demasiados intentos de registro desde esta IP. Intenta más tarde.',
-                status=429,
-                content_type='text/plain; charset=utf-8',
-            )
-
-        nombre = request.POST.get('nombre', '').strip()
-        descripcion = request.POST.get('descripcion', '').strip()
-        direccion = request.POST.get('direccion', '').strip()
-        comuna = request.POST.get('comuna', '').strip()
-        ciudad = request.POST.get('ciudad', 'Chile').strip()
-        dias_atencion = request.POST.get('dias_atencion', '').strip()
-        
-        domicilio = request.POST.get('domicilio', 'no').strip()
-        if domicilio not in ['no', 'si', 'ambos']:
-            domicilio = 'no'
-        
-        tipo_recibido = request.POST.get('tipo', '').strip()
-        tipo = tipo_recibido if tipo_recibido in TIPOS_VALIDOS else 'emprendimiento'
-        
-        wsp_publico = request.POST.get('wsp_publico', 'no').strip()
-        whatsapp_raw = request.POST.get('whatsapp', '').strip() or None
-        whatsapp = whatsapp_raw if wsp_publico == 'si' else None
-        
-        instagram = request.POST.get('instagram', '').strip() or None
-        facebook = request.POST.get('facebook', '').strip() or None
-        
-        lat_raw = request.POST.get('latitud', '').strip()
-        lng_raw = request.POST.get('longitud', '').strip()
-        try:
-            latitud = float(lat_raw) if lat_raw else None
-            longitud = float(lng_raw) if lng_raw else None
-        except ValueError:
-            latitud = longitud = None
-
-        if latitud is None or longitud is None:
-            latitud, longitud = geocode(direccion, comuna, ciudad)
-
-        negocio = Negocio.objects.create(
-            nombre=nombre,
-            tipo=tipo,
-            descripcion=descripcion,
-            direccion=direccion,
-            comuna=comuna,
-            ciudad=ciudad or 'Chile',
-            latitud=latitud,
-            longitud=longitud,
-            dias_atencion=dias_atencion,
-            domicilio=domicilio,
-            whatsapp=whatsapp,
-            instagram=instagram,
-            facebook=facebook,
-            estado='pendiente',
-        )
-        
-        imagenes = request.FILES.getlist('imagenes')
-        
-        if not imagenes:
-            i = 0
-            while True:
-                imagen_key = f'imagen_{i}'
-                if imagen_key in request.FILES:
-                    imagenes.append(request.FILES[imagen_key])
-                    i += 1
-                else:
-                    break
-        
-        for key in request.FILES.keys():
-            if key.startswith('imagen_') and key not in [f'imagen_{i}' for i in range(len(imagenes))]:
-                imagenes.append(request.FILES[key])
-        
-        imagenes_guardadas = 0
-        for imagen in imagenes:
-            if imagen: 
-                try:
-                    ImagenNegocio.objects.create(
-                        negocio=negocio,
-                        imagen=imagen
-                    )
-                    imagenes_guardadas += 1
-                except Exception as e:
-                    print(f"Error al guardar imagen: {e}")
-        
-        # Debug: imprimir cuántas imágenes se guardaron
-        print(f"📸 Negocio '{nombre}' creado con {imagenes_guardadas} imágenes")
-        
-        # Si no se guardaron imágenes pero se esperaban, mostrar advertencia
-        total_fotos = request.POST.get('total_fotos', '0')
-        if total_fotos.isdigit() and int(total_fotos) > 0 and imagenes_guardadas == 0:
-            print(f"⚠️ ADVERTENCIA: Se esperaban {total_fotos} fotos pero no se guardó ninguna")
-        
-        # Limpiar caché del dashboard
-        cache.delete('dashboard_stats')
-        
-        return redirect('index')
-
-    return render(request, 'negocio.html')
-
+# ============================================================
+# REST API VIEWSET
+# ============================================================
 
 class NegocioPagination(PageNumberPagination):
     page_size = 50
@@ -433,6 +538,7 @@ class NegocioViewSet(viewsets.ModelViewSet):
         cat = (self.request.query_params.get('cat') or '').strip()
         q = (self.request.query_params.get('q') or '').strip()
         since = (self.request.query_params.get('updated_since') or '').strip()
+        
         if cat and cat != 'all':
             qs = qs.filter(tipo=cat)
         if q:

@@ -34,6 +34,14 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['tubarrio.onrender.com','*']
 
+# Configuración de Gmail
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'katalinagatita7520@gmail.com'
+EMAIL_HOST_PASSWORD = 'mvpviqpdzgkeeuxd' 
+DEFAULT_FROM_EMAIL = f'TuBarrio <{EMAIL_HOST_USER}>'
 
 # Application definition
 

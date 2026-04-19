@@ -2,24 +2,159 @@
 <!DOCTYPE html>
 <html lang="es-CL">
 <head>
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
   <meta charset="UTF-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes"/>
   <meta name="theme-color" content="#FDFAF4"/>
-  <meta name="description" content="Negocios locales  - Descubre emprendimientos cerca de ti">
-  <meta property="og:title" content="TuBarrio">  
+  <meta name="description" content="Descubre negocios locales en tu barrio - TuBarrio">
+  
+  <!-- PWA Meta Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="TuBarrio">
+  <meta name="mobile-web-app-capable" content="yes">
+  
   <title>TuBarrio — Descubre lo que hay en tu barrio</title>
+
+  <!-- PWA Manifest -->
+  <link rel="manifest" href="{% static 'manifest.json' %}">
+  
+  <!-- Apple Touch Icon -->
+  <link rel="apple-touch-icon" href="{% static 'icons/icon-192.png' %}">
+  
+  <!-- Favicon -->
   <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
 
-  <link rel="preconnect" href="https://unpkg.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="icon" type="image/png" sizes="192x192" href="{% static 'icons/icon-192.png' %}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{% static 'icons/icon-512.png' %}">
 
+  <!-- Leaflet CSS -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css"/>
 
+  <!-- Fuentes -->
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+  
+  <!-- Tu CSS principal -->
   <link rel="stylesheet" href="{% static 'css/tubarrio.css' %}"/>
+</head>
+  
+  <style>
+    /* Estilos adicionales para el botón de reporte y contacto */
+    .report-btn-modal {
+      background: var(--warm);
+      color: var(--dust);
+      border: 1px solid rgba(36,26,16,.12);
+    }
+    .report-btn-modal:hover {
+      background: #DDD4C4;
+      color: var(--bark);
+    }
+    .report-btn-popup {
+      background: rgba(36,26,16,.08);
+      color: var(--dust);
+    }
+    .report-btn-popup:hover {
+      background: rgba(208,48,42,.15);
+      color: var(--err);
+    }
+    .btn-contacto {
+      background: var(--warm);
+      color: var(--bark);
+      padding: 0.5rem 0.9rem;
+      border-radius: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      transition: all 0.2s;
+      border: 1px solid rgba(36,26,16,.1);
+    }
+    .btn-contacto:hover {
+      background: #DDD4C4;
+      transform: translateY(-1px);
+    }
+    
+    /* Botón flotante de reporte general — discreto, esquina inferior derecha */
+    .btn-reporte-flotante {
+      position: fixed;
+      bottom: 90px;
+      right: 14px;
+      z-index: 150;
+      background: rgba(253,250,244,.92);
+      color: var(--dust);
+      border: 1px solid rgba(36,26,16,.12);
+      border-radius: 100px;
+      padding: 0.38rem 0.85rem;
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(36,26,16,.1);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.2s;
+      backdrop-filter: blur(10px);
+      letter-spacing: 0.01em;
+    }
+    .btn-reporte-flotante:hover {
+      background: rgba(253,250,244,1);
+      color: var(--terra);
+      border-color: rgba(194,82,42,.25);
+      box-shadow: 0 4px 14px rgba(36,26,16,.14);
+      transform: translateY(-1px);
+    }
+    
+    /* Footer con enlaces — discreto, esquina inferior izquierda */
+    .footer-links {
+      position: fixed;
+      bottom: 90px;
+      left: 14px;
+      z-index: 150;
+      background: rgba(253,250,244,.92);
+      backdrop-filter: blur(10px);
+      border-radius: 100px;
+      padding: 0.38rem 0.85rem;
+      font-size: 0.72rem;
+      border: 1px solid rgba(36,26,16,.12);
+      box-shadow: 0 2px 10px rgba(36,26,16,.1);
+      font-weight: 600;
+      letter-spacing: 0.01em;
+    }
+    .footer-links a {
+      color: var(--dust);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-links a:hover {
+      color: var(--terra);
+    }
+    
+    @media (max-width: 768px) {
+      .btn-reporte-flotante {
+        bottom: 90px;
+        right: 10px;
+        font-size: 0.68rem;
+        padding: 0.32rem 0.7rem;
+      }
+      .footer-links {
+        bottom: 90px;
+        left: 10px;
+        font-size: 0.68rem;
+        padding: 0.32rem 0.7rem;
+      }
+      .btn-contacto {
+        padding: 0.45rem 0.7rem;
+        font-size: 0.75rem;
+      }
+    }
+  </style>
 </head>
 <body>
 
@@ -36,6 +171,7 @@
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/><circle cx="12" cy="12" r="8"/></svg>
     <span>Mi ubicación</span>
   </button>
+  <a href="{% url 'contacto' %}" class="btn-contacto">📬 Contacto</a>
   <a href="{% url 'ingresa_tu_negocio' %}" class="btn-reg">+ Registrar</a>
 </div>
 <div class="sr-only" id="gpsHint">Activa tu GPS para ver negocios cerca y ordenar por distancia.</div>
@@ -88,6 +224,7 @@
 
 <div class="statusbar" id="statusBar" aria-live="polite" aria-atomic="true"></div>
 
+<!-- Modal de detalles del negocio -->
 <div class="modal-ov" id="detailModal" role="dialog" aria-modal="true">
   <div class="modal">
     <div class="m-banner" id="mBanner"></div>
@@ -101,7 +238,7 @@
       </div>
       
       <div class="m-tab-content active" id="contentDetalles">
-      <div class="m-info" id="mInfo" style="display:flex;flex-direction:column;gap:12px;"></div>
+        <div class="m-info" id="mInfo" style="display:flex;flex-direction:column;gap:12px;"></div>
       </div>
       
       <div class="m-tab-content" id="contentFotos">
@@ -111,6 +248,246 @@
       <div class="m-actions" id="mActions"></div>
     </div>
   </div>
+</div>
+
+<!-- ========== MODAL DE REPORTE ========== -->
+<style>
+  /* ── Modal reporte — estilos explícitos para evitar herencia del sistema ── */
+  #modalReporte .modal {
+    background: #FDFAF4;
+    color: #241A10;
+  }
+  #modalReporte .m-banner {
+    background: linear-gradient(135deg, #C2522A, #D4A540);
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+  }
+  #modalReporte .m-body {
+    background: #FDFAF4;
+    color: #241A10;
+    padding: 1.4rem;
+  }
+  #modalReporte .m-name {
+    font-family: 'Fraunces', serif;
+    font-weight: 900;
+    font-size: 1.3rem;
+    color: #241A10;
+    margin-bottom: 0.25rem;
+  }
+  #modalReporte p {
+    font-size: 0.85rem;
+    color: #8A7768;
+    margin-bottom: 1.2rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+  #modalReporte label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #241A10;
+    margin-bottom: 0.4rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+  #modalReporte .req {
+    color: #C2522A;
+  }
+  #modalReporte .field {
+    margin-bottom: 1rem;
+  }
+  #modalReporte select,
+  #modalReporte textarea,
+  #modalReporte input[type="email"] {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid rgba(36,26,16,.15);
+    background: #F6F1E9;
+    color: #241A10;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+  }
+  #modalReporte select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A7768' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1rem center;
+    padding-right: 2.5rem;
+    cursor: pointer;
+  }
+  #modalReporte select:focus,
+  #modalReporte textarea:focus,
+  #modalReporte input[type="email"]:focus {
+    border-color: #C2522A;
+    box-shadow: 0 0 0 3px rgba(194,82,42,.1);
+    background: #FDFAF4;
+  }
+  #modalReporte textarea {
+    resize: vertical;
+    min-height: 90px;
+  }
+  #modalReporte .hint {
+    font-size: 0.73rem;
+    color: #8A7768;
+    margin-top: 0.35rem;
+    font-family: 'DM Sans', sans-serif;
+  }
+  #modalReporte .privacy-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin: 1rem 0;
+    font-size: 0.8rem;
+    color: #8A7768;
+    font-family: 'DM Sans', sans-serif;
+    line-height: 1.5;
+  }
+  #modalReporte .privacy-check input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin-top: 2px;
+    flex-shrink: 0;
+    accent-color: #C2522A;
+    cursor: pointer;
+  }
+  #modalReporte .quick-actions {
+    display: flex;
+    gap: 0.6rem;
+    margin-top: 1rem;
+  }
+  #modalReporte .btn-cancelar {
+    flex: 1;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    border: 1.5px solid rgba(36,26,16,.15);
+    background: #EDE4D6;
+    color: #241A10;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+  }
+  #modalReporte .btn-cancelar:hover {
+    background: #DDD4C4;
+  }
+  #modalReporte .btn-enviar {
+    flex: 2;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    border: none;
+    background: #C2522A;
+    color: #fff;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    box-shadow: 0 3px 12px rgba(194,82,42,.3);
+  }
+  #modalReporte .btn-enviar:hover {
+    background: #A8401E;
+    transform: translateY(-1px);
+  }
+  #modalReporte .reporte-exito {
+    text-align: center;
+    padding: 1.5rem 1rem;
+    background: #FDFAF4;
+    color: #241A10;
+  }
+  #modalReporte .reporte-exito h4 {
+    font-family: 'Fraunces', serif;
+    font-size: 1.2rem;
+    color: #241A10;
+    margin: 0.5rem 0;
+  }
+  #modalReporte .reporte-exito p {
+    color: #8A7768;
+    margin-bottom: 1rem;
+  }
+</style>
+
+<div id="modalReporte" class="modal-ov">
+  <div class="modal" style="max-width: 480px;">
+    <div class="m-banner">
+      <span style="font-size: 2.2rem;">⚠️</span>
+      <button class="m-close" onclick="cerrarModalReporte()">✕</button>
+    </div>
+    <div class="m-body">
+      <div class="m-name" id="reporteModalTitulo">Reportar problema</div>
+      <p>Ayúdanos a mejorar TuBarrio. Cuéntanos qué está pasando.</p>
+
+      <form id="formReporte">
+        {% csrf_token %}
+        <input type="hidden" id="reporte_negocio_id" name="negocio_id">
+
+        <div class="field">
+          <label><span class="req">*</span> Tipo de problema</label>
+          <select id="reporte_tipo" name="tipo" required>
+            <option value="">Selecciona...</option>
+            <option value="info_incorrecta">📝 Información incorrecta</option>
+            <option value="negocio_cerrado">🚪 Negocio cerrado / no existe</option>
+            <option value="ubicacion_mala">📍 Ubicación errónea en el mapa</option>
+            <option value="contenido_malo">⚠️ Contenido inapropiado</option>
+            <option value="duplicado">🔄 Negocio duplicado</option>
+            <option value="otro">💬 Otro problema</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label><span class="req">*</span> Descripción del problema</label>
+          <textarea id="reporte_desc" name="descripcion" rows="3"
+            placeholder="Ej: El horario está mal, cierra a las 18:00 no a las 20:00..."
+            required></textarea>
+          <div class="hint">Cuanto más detalle, mejor podremos ayudarte</div>
+        </div>
+
+        <div class="field">
+          <label>📧 Tu email (opcional)</label>
+          <input type="email" id="reporte_email" name="email"
+            placeholder="Para contactarte si necesitamos más información">
+        </div>
+
+        <div class="privacy-check">
+          <input type="checkbox" id="reporte_privacidad" required>
+          <span>Acepto que mis datos se usen solo para resolver este reporte.</span>
+        </div>
+
+        <div class="quick-actions">
+          <button type="button" class="btn-cancelar" onclick="cerrarModalReporte()">Cancelar</button>
+          <button type="submit" class="btn-enviar">Enviar reporte →</button>
+        </div>
+      </form>
+
+      <div id="reporteExito" class="reporte-exito" style="display:none;">
+        <div style="font-size: 3rem;">✅</div>
+        <h4>¡Gracias por reportar!</h4>
+        <p>Revisaremos el problema y lo solucionaremos pronto.</p>
+        <button class="btn-enviar" onclick="cerrarModalReporte()" style="width:100%;justify-content:center;">Cerrar</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Botón flotante para reporte general -->
+<button class="btn-reporte-flotante" onclick="abrirReporteGeneral()">
+  ⚠️ Reportar problema
+</button>
+
+<!-- Footer con enlaces -->
+<div class="footer-links">
+  <a href="{% url 'contacto' %}">📬 Contacto / Soporte</a>
 </div>
 
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

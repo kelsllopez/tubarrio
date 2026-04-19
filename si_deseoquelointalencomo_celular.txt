@@ -1,0 +1,88 @@
+/* ════════════════════════════
+   PWA - INSTALACIÓN BONITA (SIN PROMPT FEO)
+════════════════════════════ */
+
+let deferredPrompt;
+
+// Prevenir el prompt nativo feo del navegador
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Crear botón bonito después de 3 segundos
+  setTimeout(function() {
+    // No mostrar si ya existe o si la app está instalada
+    if (document.getElementById('installPwaBtn')) return;
+    if (window.matchMedia('(display-mode: standalone)').matches) return;
+    
+    const installBtn = document.createElement('button');
+    installBtn.id = 'installPwaBtn';
+    installBtn.innerHTML = '📱 Instalar TuBarrio';
+    installBtn.style.cssText = `
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(135deg, #C2522A, #D4A540);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 50px;
+      font-weight: 700;
+      font-size: 16px;
+      box-shadow: 0 8px 20px rgba(194,82,42,0.4);
+      z-index: 9999;
+      cursor: pointer;
+      font-family: 'DM Sans', sans-serif;
+      border: 2px solid rgba(255,255,255,0.2);
+      transition: all 0.3s ease;
+      white-space: nowrap;
+      backdrop-filter: blur(10px);
+    `;
+    
+    // Efecto hover
+    installBtn.onmouseover = () => {
+      installBtn.style.transform = 'translateX(-50%) scale(1.05)';
+      installBtn.style.boxShadow = '0 12px 30px rgba(194,82,42,0.5)';
+    };
+    installBtn.onmouseout = () => {
+      installBtn.style.transform = 'translateX(-50%) scale(1)';
+      installBtn.style.boxShadow = '0 8px 20px rgba(194,82,42,0.4)';
+    };
+    
+    // Click para instalar
+    installBtn.onclick = async function() {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        
+        if (outcome === 'accepted') {
+          console.log('✅ App instalada');
+          showToast('🎉 ¡Gracias por instalar TuBarrio!', 3000);
+        }
+        
+        deferredPrompt = null;
+        installBtn.remove();
+      }
+    };
+    
+    document.body.appendChild(installBtn);
+    
+    // Auto-ocultar después de 15 segundos
+    setTimeout(() => {
+      if (installBtn.parentNode) {
+        installBtn.style.opacity = '0';
+        installBtn.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => installBtn.remove(), 300);
+      }
+    }, 15000);
+    
+  }, 3000);
+});
+
+// Detectar cuando se instala
+window.addEventListener('appinstalled', function() {
+  console.log('📲 App instalada');
+  document.getElementById('installPwaBtn')?.remove();
+  showToast('✅ ¡TuBarrio instalada con éxito!', 2000);
+});

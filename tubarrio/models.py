@@ -103,3 +103,25 @@ class ImagenNegocio(models.Model):
     def get_preview_url(self):
         """Devuelve URL de preview para el admin"""
         return self.get_thumbnail_url(200, 200)
+    
+class Reporte(models.Model):
+    TIPOS = [
+        ('info_incorrecta', 'Información incorrecta'),
+        ('negocio_cerrado', 'Negocio cerrado'),
+        ('ubicacion_mala', 'Ubicación errónea'),
+        ('contenido_malo', 'Contenido inapropiado'),
+        ('duplicado', 'Negocio duplicado'),
+        ('otro', 'Otro'),
+    ]
+    
+    negocio = models.ForeignKey('Negocio', on_delete=models.CASCADE, null=True, blank=True)
+    tipo = models.CharField(max_length=50, choices=TIPOS)
+    descripcion = models.TextField()
+    email_reporte = models.EmailField(blank=True, null=True)
+    imagen = models.URLField(blank=True, null=True)  # Si guardas en Cloudinary
+    ip = models.GenericIPAddressField(blank=True, null=True)
+    fecha = models.DateTimeField(auto_now_add=True)
+    resuelto = models.BooleanField(default=False)
+    
+    def __str__(self):
+        return f"{self.tipo} - {self.fecha}"    

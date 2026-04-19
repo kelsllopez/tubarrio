@@ -1,20 +1,24 @@
 {
-  "name": "TuBarrio App",
+  "name": "TuBarrio - Negocios Locales",
   "short_name": "TuBarrio",
+  "description": "Descubre emprendimientos y negocios cerca de ti",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#4CAF50",
+  "orientation": "portrait",
+  "background_color": "#FDFAF4",
+  "theme_color": "#FDFAF4",
   "icons": [
     {
       "src": "/static/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
