@@ -1,4 +1,3 @@
-
 /* ════════════════════════════
    CATEGORÍAS
 ════════════════════════════ */
@@ -77,7 +76,7 @@ function getDomicilioIcono(domicilio) {
 }
 
 /* ════════════════════════════
-   VERIFICAR SI ESTÁ ABIERTO AHORA
+   VERIFICAR SI ESTÁ ABIERTO AHORA - VERSIÓN MEJORADA
 ════════════════════════════ */
 
 const DIAS_MAPA = {
@@ -85,60 +84,92 @@ const DIAS_MAPA = {
   'Jue': 4, 'Vie': 5, 'Sáb': 6, 'Sab': 6
 };
 
+const DIAS_ORDEN = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
+
 function verificarAbiertoAhora(diasStr) {
-  if (!diasStr || diasStr === 'Horario a confirmar' || diasStr === 'No especificado') {
-    return { abierto: false, mensaje: 'Horario no disponible', clase: 'cerrado' };
+  if (!diasStr || diasStr === 'Horario a confirmar' || diasStr === 'No especificado' || diasStr === 'Horario no especificado') {
+    return { abierto: false, mensaje: 'Sin horario', clase: 'cerrado' };
   }
-  
+
   try {
     const ahora = new Date();
     const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
-    const diaActual = ahora.getDay();
-    
-    const partes = diasStr.split('·');
-    if (partes.length < 2) return { abierto: false, mensaje: 'Horario no disponible', clase: 'cerrado' };
-    
-    const diasParte = partes[0].trim();
-    const horasParte = partes[1].trim();
-    
-    const diasArray = diasParte.split(',').map(d => d.trim());
-    const diasNumeros = diasArray.map(d => DIAS_MAPA[d]).filter(d => d !== undefined);
-    
-    if (!diasNumeros.includes(diaActual)) {
-      const diasOrdenados = ['Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb', 'Dom'];
-      const hoyIdx = diasOrdenados.findIndex(d => DIAS_MAPA[d] === diaActual);
-      
-      for (let i = 0; i < 7; i++) {
-        const idx = (hoyIdx + i) % 7;
-        if (diasNumeros.includes(DIAS_MAPA[diasOrdenados[idx]])) {
-          return { abierto: false, mensaje: `Abre el ${diasOrdenados[idx]}`, clase: 'cerrado' };
+    const diaActual  = ahora.getDay();
+
+    const franjas = diasStr.split('|').map(f => f.trim());
+    let abreHoy = false, horarioAperturaHoy = null;
+    const todosLosDiasNumeros = new Set();
+
+    for (const franja of franjas) {
+      let diasParte = null, horaInicio = null, horaFin = null;
+
+      // Formato nuevo: "días de HH:MM a HH:MM"
+      let m = franja.match(/^(.+?)\s+de\s+(\d{1,2}):(\d{2})\s+a\s+(\d{1,2}):(\d{2})$/i);
+      if (m) {
+        diasParte  = m[1].trim();
+        horaInicio = +m[2] * 60 + +m[3];
+        horaFin    = +m[4] * 60 + +m[5];
+      }
+
+      // Formato antiguo: "días · HH:MM–HH:MM" (· o •, – o -)
+      if (!m) {
+        m = franja.match(/^(.+?)\s*[·•]\s*(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})$/);
+        if (m) {
+          diasParte  = m[1].trim();
+          horaInicio = +m[2] * 60 + +m[3];
+          horaFin    = +m[4] * 60 + +m[5];
         }
       }
-      return { abierto: false, mensaje: 'Cerrado hoy', clase: 'cerrado' };
-    }
-    
-    const horasMatch = horasParte.match(/(\d{1,2}):(\d{2})[–\-](\d{1,2}):(\d{2})/);
-    if (!horasMatch) return { abierto: false, mensaje: 'Horario no disponible', clase: 'cerrado' };
-    
-    const horaInicio = parseInt(horasMatch[1]) * 60 + parseInt(horasMatch[2]);
-    const horaFin = parseInt(horasMatch[3]) * 60 + parseInt(horasMatch[4]);
-    
-    if (horaActual >= horaInicio && horaActual <= horaFin) {
-      return { abierto: true, mensaje: '🟢 Abierto ahora', clase: 'abierto' };
-    } else if (horaActual < horaInicio) {
-      const falta = horaInicio - horaActual;
-      const horas = Math.floor(falta / 60);
-      const mins = falta % 60;
-      if (horas > 0) {
-        return { abierto: false, mensaje: `⏰ Abre en ${horas}h ${mins}m`, clase: 'cerrado' };
-      } else {
-        return { abierto: false, mensaje: `⏰ Abre en ${mins}m`, clase: 'cerrado' };
+
+      if (!diasParte) continue;
+
+      const diasNumeros = diasParte.split(',')
+        .map(d => DIAS_MAPA[d.trim()])
+        .filter(d => d !== undefined);
+
+      diasNumeros.forEach(d => todosLosDiasNumeros.add(d));
+
+      if (!diasNumeros.includes(diaActual)) continue;
+
+      abreHoy = true;
+
+      // Manejar cierre pasada medianoche (ej: 13:00–00:45)
+      const cierraPasaMedianoche = horaFin < horaInicio;
+      const estaAbierto = cierraPasaMedianoche
+        ? (horaActual >= horaInicio || horaActual <= horaFin)
+        : (horaActual >= horaInicio && horaActual <= horaFin);
+
+      if (estaAbierto) return { abierto: true, mensaje: '🟢 Abierto ahora', clase: 'abierto' };
+
+      if (horaActual < horaInicio && (horarioAperturaHoy === null || horaInicio < horarioAperturaHoy)) {
+        horarioAperturaHoy = horaInicio;
       }
-    } else {
-      return { abierto: false, mensaje: '⚪ Cerrado ahora', clase: 'cerrado' };
     }
+
+    // Abre hoy pero más tarde
+    if (abreHoy && horarioAperturaHoy !== null) {
+      const falta = horarioAperturaHoy - horaActual;
+      const horas = Math.floor(falta / 60), mins = falta % 60;
+      return {
+        abierto: false,
+        mensaje: horas > 0 ? `⏰ Abre en ${horas}h ${mins}m` : `⏰ Abre en ${mins}m`,
+        clase: 'cerrado'
+      };
+    }
+
+    // Buscar próximo día
+    for (let i = 1; i <= 7; i++) {
+      const nextDay = (diaActual + i) % 7;
+      if (todosLosDiasNumeros.has(nextDay)) {
+        const nombreDia = DIAS_ORDEN.find(d => DIAS_MAPA[d] === nextDay);
+        return { abierto: false, mensaje: `📅 Abre el ${nombreDia}`, clase: 'cerrado' };
+      }
+    }
+
+    return { abierto: false, mensaje: '⚪ Cerrado', clase: 'cerrado' };
+
   } catch (e) {
-    return { abierto: false, mensaje: 'Horario no disponible', clase: 'cerrado' };
+    return { abierto: false, mensaje: '⚪ Cerrado', clase: 'cerrado' };
   }
 }
 
@@ -146,12 +177,10 @@ function getEstadoAbiertoBadge(diasStr) {
   const estado = verificarAbiertoAhora(diasStr);
   if (estado.abierto) {
     return '<span class="estado-badge abierto">🟢 Abierto ahora</span>';
-  } else if (estado.mensaje.includes('Abre en')) {
-    return `<span class="estado-badge cerrado" title="${estado.mensaje}">⏰ ${estado.mensaje}</span>`;
-  } else if (estado.mensaje.includes('Abre el')) {
-    return `<span class="estado-badge cerrado">📅 ${estado.mensaje}</span>`;
+  } else if (estado.mensaje === 'Horario no disponible') {
+    return '<span class="estado-badge cerrado">⚪ Sin horario</span>';
   } else {
-    return '<span class="estado-badge cerrado">⚪ Cerrado</span>';
+    return `<span class="estado-badge cerrado">${estado.mensaje}</span>`;
   }
 }
 
@@ -444,7 +473,7 @@ function popupHTML(n){
   const estado = verificarAbiertoAhora(n.dias);
   const estadoBadge = estado.abierto 
     ? '<span class="estado-badge-popup abierto">🟢 Abierto ahora</span>' 
-    : '<span class="estado-badge-popup cerrado">⚪ Cerrado</span>';
+    : `<span class="estado-badge-popup cerrado">${estado.mensaje}</span>`;
   
   const domicilioBadge = `<span class="domicilio-badge-popup ${n.domicilio || 'no'}" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:0.7rem;font-weight:600;">${getDomicilioIcono(n.domicilio || 'no')} ${getDomicilioTexto(n.domicilio || 'no')}</span>`;
 
@@ -884,6 +913,10 @@ function openDetail(id){
   if(fotosCount) fotosCount.textContent = numFotos;
 
   const ubicacion = [n.dir, n.comuna, n.ciudad].filter(Boolean).join(', ');
+  
+  // Obtener estado del negocio (abierto/cerrado)
+  const estadoAbierto = verificarAbiertoAhora(n.dias);
+  
   let htmlDetalles = '';
 
   if (n.descripcion) {
@@ -891,11 +924,17 @@ function openDetail(id){
   }
 
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span><strong>Dirección:</strong> ${ubicacion}</span></div>`;
-  htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span><strong>Atención:</strong> ${n.dias || 'A confirmar'}</span></div>`;
+  
+  // Mostrar el horario completo (el que viene en n.dias)
+  const horarioMostrar = n.dias || 'Horario a confirmar';
+  htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span><strong>Atención:</strong> ${horarioMostrar}</span></div>`;
 
-  const estadoAbierto = verificarAbiertoAhora(n.dias);
-  htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span style="color:${estadoAbierto.abierto ? 'var(--sage)' : 'var(--dust)'};font-weight:600">${estadoAbierto.mensaje}</span></div>`;
+  // Mostrar estado (abierto/cerrado) con estilo destacado
+  const estadoClase = estadoAbierto.abierto ? 'estado-abierto-badge' : 'estado-cerrado-badge';
+  const estadoMensajeFinal = estadoAbierto.mensaje === 'Horario no disponible' ? '⚪ Sin horario' : estadoAbierto.mensaje;
+  htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span><strong>Estado:</strong> <span class="${estadoClase}" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;margin-left:8px;">${estadoMensajeFinal}</span></span></div>`;
 
+  // Delivery
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg><span><strong>Delivery:</strong> ${getDomicilioTexto(n.domicilio || 'no')}</span></div>`;
 
   if(n.instagram){
@@ -912,7 +951,7 @@ function openDetail(id){
   }
   if(userLat !== null && n.lat != null && n.lng != null){
     const d = dist(userLat, userLng, n.lat, n.lng);
-    htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span style="color:var(--sage);font-weight:600">A ${d.toFixed(1)} km de tu ubicación</span></div>`;
+    htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span><strong>Distancia:</strong> A ${d.toFixed(1)} km de tu ubicación</span></div>`;
   }
 
   mInfo.innerHTML = htmlDetalles;

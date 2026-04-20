@@ -1147,3 +1147,75 @@ body.panel-open .filters{right:var(--panel-w)}
     color: #8A7768;
     margin-bottom: 1rem;
   }
+
+/* ════════════════════════════
+   ESTADO ABIERTO / CERRADO — MODAL Y TARJETAS
+════════════════════════════ */
+
+/* Badge en el modal de detalle */
+.estado-abierto-badge {
+  background: #d4edda;
+  color: #1a6b2f;
+  border: 1px solid #a3d4ae;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-left: 4px;
+}
+.estado-cerrado-badge {
+  background: #f0ebe3;
+  color: #6B5B4E;
+  border: 1px solid #d4c4b8;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  display: inline-block;
+  margin-left: 4px;
+}
+
+/* Badge en las tarjetas del panel lateral */
+.estado-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.estado-badge.abierto {
+  background: #d4edda;
+  color: #1a6b2f;
+  border: 1px solid #a3d4ae;
+}
+.estado-badge.cerrado {
+  background: #f0ebe3;
+  color: #6B5B4E;
+  border: 1px solid #d4c4b8;
+}
+
+/* Badge en el popup del mapa */
+.estado-badge-popup {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.estado-badge-popup.abierto {
+  background: #d4edda;
+  color: #1a6b2f;
+  border: 1px solid #a3d4ae;
+}
+.estado-badge-popup.cerrado {
+  background: #f0ebe3;
+  color: #6B5B4E;
+  border: 1px solid #d4c4b8;
+}
