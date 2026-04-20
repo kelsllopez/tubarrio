@@ -1,0 +1,793 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es-CL">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidad | TuBarrio</title>
+  <link rel="icon" type="image/png" href="{% static 'img/logo.png' %}">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,700;0,9..144,900;1,9..144,400&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --cream: #F6F1E9; --warm: #EDE4D6; --warm-dark: #D9CFC1;
+      --bark: #1E1510; --bark-mid: #3D2E20;
+      --terra: #C2522A; --terra-light: #E07B58; --terra-pale: #F5E8E2;
+      --dust: #7A6B5E; --dust-light: #A8998E;
+      --gold: #D4A540;
+      --card: #FDFAF4; --white: #FFFFFF;
+      --green: #1A6B3C; --green-pale: #E6F4EC;
+      --blue: #1A4B8C; --blue-pale: #E6EEF8;
+      --amber: #8C5A00; --amber-pale: #FEF3DC;
+      --sage: #5F8C68;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--bark);
+      min-height: 100vh;
+      line-height: 1.6;
+      overflow-x: hidden;
+    }
+
+    /* Grain sutil igual que contacto */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.035'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9000;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 500;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 1rem 2rem;
+      background: rgba(246,241,233,.92);
+      backdrop-filter: blur(24px);
+      border-bottom: 1px solid rgba(36,26,16,.07);
+    }
+    .logo {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: 1.35rem;
+      color: var(--bark);
+      text-decoration: none;
+      letter-spacing: -.025em;
+    }
+    .logo span { color: var(--terra); }
+    .nav-back {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--dust);
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: 100px;
+      border: 1.5px solid rgba(36,26,16,.1);
+      background: rgba(237,228,214,.5);
+      transition: all 0.2s;
+    }
+    .nav-back:hover { color: var(--terra); border-color: rgba(194,82,42,.25); background: rgba(237,228,214,.9); }
+
+    /* ══════════════════════════════════════════
+       HERO — mismo estilo que contacto.css
+    ══════════════════════════════════════════ */
+    .hero {
+      position: relative;
+      min-height: 42vh;
+      display: flex;
+      align-items: flex-end;
+      padding: 0 2rem 3.5rem;
+      overflow: hidden;
+      margin-top: 60px;
+    }
+
+    /* Fondo oscuro base */
+    .hero-bg {
+      position: absolute;
+      inset: 0;
+      background: var(--bark);
+    }
+
+    /* Cuadrícula estilo mapa con líneas doradas */
+    .hero-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(212,165,64,.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(212,165,64,.07) 1px, transparent 1px);
+      background-size: 44px 44px;
+    }
+
+    /* Blobs de color (adaptados a privacidad: más azul/sage) */
+    .hero-bg::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 50% 65% at 10% 75%, rgba(26,75,140,.45) 0%, transparent 65%),
+        radial-gradient(ellipse 40% 50% at 80% 20%, rgba(194,82,42,.25) 0%, transparent 60%),
+        radial-gradient(ellipse 30% 45% at 55% 90%, rgba(95,140,104,.2) 0%, transparent 55%);
+    }
+
+    /* Círculos flotantes */
+    .hero-dots { position: absolute; inset: 0; z-index: 1; pointer-events: none; }
+    .hdot {
+      position: absolute;
+      border-radius: 50%;
+      border: 1.5px solid rgba(212,165,64,.22);
+      animation: floatDot linear infinite;
+    }
+    @keyframes floatDot {
+      0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+      50%       { transform: translateY(-22px) scale(1.04); opacity: 0.65; }
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 2;
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(212,165,64,.15);
+      border: 1px solid rgba(212,165,64,.28);
+      color: var(--gold);
+      font-size: 0.7rem;
+      font-weight: 700;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 0.32rem 0.85rem;
+      border-radius: 100px;
+      margin-bottom: 1.1rem;
+      animation: fadeUp 0.55s ease both;
+    }
+
+    .hero-title {
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: clamp(2.1rem, 4.5vw, 3.8rem);
+      line-height: 1.05;
+      letter-spacing: -.03em;
+      color: var(--card);
+      margin-bottom: 0.9rem;
+      animation: fadeUp 0.55s 0.08s ease both;
+    }
+    .hero-title em { font-style: italic; color: var(--gold); }
+
+    .hero-sub {
+      font-size: 0.92rem;
+      color: rgba(253,250,244,.6);
+      max-width: 520px;
+      line-height: 1.65;
+      animation: fadeUp 0.55s 0.16s ease both;
+    }
+
+    /* Pills de resumen */
+    .hero-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1.4rem;
+      animation: fadeUp 0.55s 0.24s ease both;
+    }
+    .hero-pill {
+      padding: 0.28rem 0.8rem;
+      background: rgba(255,255,255,.07);
+      border: 1px solid rgba(255,255,255,.13);
+      border-radius: 100px;
+      font-size: 0.73rem;
+      font-weight: 600;
+      color: rgba(255,255,255,.65);
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .hero-pill:hover {
+      background: rgba(255,255,255,.12);
+      border-color: rgba(212,165,64,.35);
+      color: var(--gold);
+    }
+
+    /* Indicador de scroll */
+    .hero-scroll {
+      position: absolute;
+      bottom: 1.2rem;
+      right: 2rem;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3rem;
+      color: rgba(253,250,244,.22);
+      font-size: 0.6rem;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      animation: fadeUp 0.55s 0.4s ease both;
+    }
+    .hero-scroll-line {
+      width: 1px;
+      height: 36px;
+      background: linear-gradient(to bottom, rgba(253,250,244,.22), transparent);
+      animation: scrollPulse 2s ease-in-out infinite;
+    }
+    @keyframes scrollPulse {
+      0%, 100% { opacity: 0.3; transform: scaleY(1); }
+      50%       { opacity: 0.7; transform: scaleY(0.7); }
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ══════════════════════════════════════════
+       OVERVIEW CARDS (flotando sobre el hero)
+    ══════════════════════════════════════════ */
+    .page-wrapper { max-width: 820px; margin: 0 auto; padding: 0 1.25rem 5rem; }
+
+    .overview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: .75rem;
+      margin: -2.5rem 0 3rem;
+      position: relative;
+      z-index: 10;
+      animation: fadeUp 0.55s 0.3s ease both;
+    }
+    .overview-card {
+      background: var(--white);
+      border-radius: 18px;
+      padding: 1.2rem 1rem;
+      border: 1px solid rgba(30,21,16,.06);
+      box-shadow: 0 6px 28px rgba(30,21,16,.1);
+      text-align: center;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .overview-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 36px rgba(30,21,16,.13);
+    }
+    .overview-card .icon-wrap {
+      width: 42px; height: 42px;
+      background: var(--terra-pale);
+      border-radius: 13px;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto .75rem;
+      font-size: 1.15rem;
+    }
+    .overview-card strong { display: block; font-size: .83rem; font-weight: 700; color: var(--bark); margin-bottom: .2rem; }
+    .overview-card p { font-size: .75rem; color: var(--dust); line-height: 1.45; margin: 0; }
+
+    /* ── Info banner ── */
+    .info-banner {
+      border-radius: 0 14px 14px 0;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+      display: flex;
+      gap: .85rem;
+      align-items: flex-start;
+    }
+    .banner-blue {
+      background: var(--blue-pale);
+      border: 1px solid rgba(26,75,140,.2);
+      border-left: 4px solid var(--blue);
+    }
+    .banner-blue p { font-size: .87rem; color: var(--blue); line-height: 1.6; margin: 0; }
+    .banner-blue strong { color: var(--blue); }
+    .banner-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: .05rem; }
+
+    /* ── Intro text ── */
+    .intro-text {
+      font-size: 1.02rem;
+      color: var(--dust);
+      line-height: 1.8;
+      margin-bottom: 2.5rem;
+      padding-bottom: 2.5rem;
+      border-bottom: 1px solid var(--warm);
+    }
+    .intro-text strong { color: var(--bark); }
+
+    /* ── Tabla de datos ── */
+    .safety-table-wrap { background: var(--white); border: 1px solid rgba(30,21,16,.07); border-radius: 18px; overflow: hidden; margin-bottom: 1rem; box-shadow: 0 4px 20px rgba(30,21,16,.06); }
+    .safety-table-header { background: var(--bark); padding: .75rem 1.25rem; font-size: .78rem; font-weight: 700; color: var(--white); letter-spacing: .06em; text-transform: uppercase; display: grid; grid-template-columns: 2fr 1fr 1fr 1.6fr; gap: .75rem; }
+    .safety-row { display: grid; grid-template-columns: 2fr 1fr 1fr 1.6fr; gap: .75rem; padding: .85rem 1.25rem; border-bottom: 1px solid var(--warm); align-items: center; transition: background 0.15s; }
+    .safety-row:last-child { border-bottom: none; }
+    .safety-row:nth-child(even) { background: rgba(246,241,233,.5); }
+    .safety-row:hover { background: rgba(237,228,214,.6); }
+    .safety-cell { font-size: .82rem; color: var(--dust); line-height: 1.4; }
+    .safety-cell strong { color: var(--bark); font-weight: 700; display: block; font-size: .84rem; }
+
+    .tag { display: inline-block; padding: .18rem .55rem; border-radius: 6px; font-size: .7rem; font-weight: 700; }
+    .tag-no  { background: var(--green-pale); color: var(--green); }
+    .tag-yes { background: var(--terra-pale); color: var(--terra); }
+    .tag-opt { background: var(--amber-pale); color: var(--amber); }
+
+    /* ── Sections ── */
+    .section { margin-bottom: 2.5rem; }
+    .section-header { display: flex; align-items: flex-start; gap: 1rem; margin-bottom: 1.25rem; }
+    .section-num {
+      flex-shrink: 0;
+      width: 36px; height: 36px;
+      background: var(--terra);
+      color: var(--white);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Fraunces', serif;
+      font-weight: 900;
+      font-size: .95rem;
+      margin-top: .15rem;
+    }
+    .section-num.star { font-size: 1rem; }
+    .section h2 { font-family: 'Fraunces', serif; font-weight: 700; font-size: 1.35rem; color: var(--bark); letter-spacing: -.02em; line-height: 1.2; margin-bottom: .25rem; }
+    .section-tag { display: inline-block; padding: .15rem .55rem; background: var(--terra-pale); color: var(--terra); border-radius: 6px; font-size: .7rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+    .section-body { padding-left: 3.25rem; }
+
+    .subsection { background: var(--card); border: 1px solid var(--warm); border-radius: 16px; padding: 1.1rem 1.25rem; margin-bottom: .75rem; }
+    .subsection h3 { font-size: .9rem; font-weight: 700; color: var(--terra); margin-bottom: .6rem; display: flex; align-items: center; gap: .5rem; }
+    .subsection h3::before { content: ''; width: 6px; height: 6px; background: var(--terra); border-radius: 50%; flex-shrink: 0; }
+    .subsection p { font-size: .9rem; color: var(--dust); line-height: 1.65; margin-bottom: .6rem; }
+    .subsection p:last-child { margin-bottom: 0; }
+
+    .alert { border-radius: 0 10px 10px 0; padding: .8rem 1rem; margin: .6rem 0; font-size: .87rem; line-height: 1.55; }
+    .alert-terra { background: var(--terra-pale); border: 1px solid rgba(194,82,42,.2); border-left: 3px solid var(--terra); color: var(--bark-mid); }
+    .alert-terra strong { color: var(--terra); }
+    .alert-green { background: var(--green-pale); border: 1px solid rgba(26,107,60,.2); border-left: 3px solid var(--green); color: #14472A; }
+    .alert-green strong { color: var(--green); }
+
+    ul.clean-list { list-style: none; padding: 0; margin: .5rem 0; }
+    ul.clean-list li { font-size: .9rem; color: var(--dust); padding: .35rem 0 .35rem 1.2rem; position: relative; line-height: 1.55; border-bottom: 1px solid rgba(0,0,0,.04); }
+    ul.clean-list li:last-child { border-bottom: none; }
+    ul.clean-list li::before { content: '→'; position: absolute; left: 0; color: var(--terra); font-weight: 700; font-size: .8rem; top: .45rem; }
+    ul.clean-list li strong { color: var(--bark); font-weight: 700; }
+    ul.clean-list a { color: var(--terra); font-weight: 700; text-decoration: none; }
+
+    .plain-text { font-size: .92rem; color: var(--dust); line-height: 1.7; margin-bottom: .75rem; }
+    .plain-text strong { color: var(--bark); font-weight: 700; }
+    .plain-text a { color: var(--terra); font-weight: 700; text-decoration: none; }
+    .plain-text a:hover { text-decoration: underline; }
+
+    .perms-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: .6rem; margin: .5rem 0; }
+    .perm-card { background: var(--card); border: 1px solid var(--warm); border-radius: 12px; padding: .8rem 1rem; display: flex; gap: .75rem; align-items: flex-start; transition: border-color 0.2s; }
+    .perm-card:hover { border-color: rgba(194,82,42,.25); }
+    .perm-icon { font-size: 1.15rem; flex-shrink: 0; margin-top: .05rem; }
+    .perm-name { font-size: .84rem; font-weight: 700; color: var(--bark); margin-bottom: .15rem; }
+    .perm-why { font-size: .78rem; color: var(--dust); line-height: 1.4; }
+
+    .ret-table { width: 100%; border-collapse: collapse; }
+    .ret-table th { background: var(--warm); text-align: left; padding: .6rem .9rem; font-size: .8rem; font-weight: 700; color: var(--bark); }
+    .ret-table td { padding: .6rem .9rem; font-size: .85rem; color: var(--dust); border-bottom: 1px solid var(--warm); }
+    .ret-table tr:last-child td { border-bottom: none; }
+    .ret-table strong { color: var(--bark); }
+
+    .contact-block { display: flex; gap: .75rem; flex-wrap: wrap; margin-top: .5rem; }
+    .contact-item { display: flex; align-items: center; gap: .6rem; background: var(--white); border: 1px solid var(--warm); border-radius: 12px; padding: .65rem 1rem; font-size: .88rem; text-decoration: none; color: var(--bark); transition: border-color .2s, box-shadow .2s, transform .15s; }
+    .contact-item:hover { border-color: var(--terra); box-shadow: 0 4px 16px rgba(194,82,42,.12); transform: translateY(-2px); }
+    .contact-item .ci-label { font-size: .75rem; color: var(--dust); display: block; line-height: 1; margin-bottom: .15rem; }
+    .contact-item strong { color: var(--terra); font-size: .88rem; }
+    .contact-icon { width: 32px; height: 32px; background: var(--terra-pale); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: .95rem; flex-shrink: 0; }
+
+    .divider { height: 1px; background: var(--warm); margin: 2.25rem 0; }
+    .last-updated { font-size: .78rem; color: var(--dust-light); font-style: italic; margin-bottom: 1.5rem; text-align: right; }
+
+    /* ── Footer nav ── */
+    .footer-nav { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; padding-top: 2rem; border-top: 1px solid var(--warm); margin-top: 1rem; }
+    .back-btn { display: inline-flex; align-items: center; gap: .5rem; padding: .55rem 1.3rem; background: var(--bark); color: var(--white); border-radius: 100px; font-size: .85rem; font-weight: 600; text-decoration: none; transition: background .2s, transform .15s; }
+    .back-btn:hover { background: var(--bark-mid); transform: translateY(-1px); }
+    .footer-links-right { display: flex; gap: 1.25rem; }
+    .footer-link { font-size: .85rem; color: var(--dust); text-decoration: none; font-weight: 600; transition: color .2s; }
+    .footer-link:hover { color: var(--terra); }
+
+    @media (max-width: 768px) {
+      nav { padding: 0.75rem 1.1rem; }
+      .hero { min-height: 36vh; padding: 0 1.2rem 3rem; margin-top: 56px; }
+      .hero-title { font-size: 2rem; }
+      .hero-sub { font-size: 0.85rem; }
+      .section-body { padding-left: 0; }
+    }
+    @media (max-width: 560px) {
+      .safety-table-header, .safety-row { grid-template-columns: 1.5fr 1fr; }
+      .safety-table-header span:nth-child(3), .safety-table-header span:nth-child(4),
+      .safety-row .safety-cell:nth-child(3), .safety-row .safety-cell:nth-child(4) { display: none; }
+      .overview-grid { grid-template-columns: 1fr 1fr; }
+      .footer-nav { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a href="/" class="logo">Tu<span>Barrio</span></a>
+    <a href="/" class="nav-back">← Volver al mapa</a>
+  </nav>
+
+  <!-- HERO — mismo estilo que contacto -->
+  <section class="hero">
+    <div class="hero-bg"></div>
+
+    <!-- Círculos flotantes decorativos -->
+    <div class="hero-dots">
+      <div class="hdot" style="width:90px;height:90px;top:12%;left:6%;animation-duration:6.5s;animation-delay:0s;"></div>
+      <div class="hdot" style="width:45px;height:45px;top:65%;left:22%;animation-duration:8s;animation-delay:1.2s;"></div>
+      <div class="hdot" style="width:120px;height:120px;top:18%;right:10%;animation-duration:7s;animation-delay:2s;border-color:rgba(26,75,140,.18);"></div>
+      <div class="hdot" style="width:60px;height:60px;bottom:22%;right:26%;animation-duration:5.5s;animation-delay:0.7s;"></div>
+      <div class="hdot" style="width:32px;height:32px;top:40%;left:45%;animation-duration:9s;animation-delay:3s;border-color:rgba(95,140,104,.2);"></div>
+    </div>
+
+    <div class="hero-content">
+      <div class="hero-eyebrow">🔒 Privacidad & Datos</div>
+      <h1 class="hero-title">Tus datos,<br><em>tu control.</em></h1>
+      <p class="hero-sub">Cumplimiento con Google Play · Ley 19.628 (Chile) · Audiencia +13. Transparencia total sobre cómo usamos tu información.</p>
+      <div class="hero-pills">
+        <span class="hero-pill">📍 GPS solo en tiempo real</span>
+        <span class="hero-pill">🚫 Sin venta de datos</span>
+        <span class="hero-pill">🗑️ Eliminación en 72h</span>
+        <span class="hero-pill">🛡️ HTTPS siempre</span>
+      </div>
+    </div>
+
+    <div class="hero-scroll">
+      <div class="hero-scroll-line"></div>
+      scroll
+    </div>
+  </section>
+
+  <div class="page-wrapper">
+
+    <!-- Overview cards flotando sobre el hero -->
+    <div class="overview-grid">
+      <div class="overview-card">
+        <div class="icon-wrap">📍</div>
+        <strong>Ubicación</strong>
+        <p>Solo en tiempo real, nunca almacenada</p>
+      </div>
+      <div class="overview-card">
+        <div class="icon-wrap">🔒</div>
+        <strong>Sin terceros</strong>
+        <p>No vendemos ni compartimos datos</p>
+      </div>
+      <div class="overview-card">
+        <div class="icon-wrap">🗑️</div>
+        <strong>Eliminación</strong>
+        <p>Solicita borrar tus datos en 72h</p>
+      </div>
+      <div class="overview-card">
+        <div class="icon-wrap">🛡️</div>
+        <strong>Seguridad</strong>
+        <p>HTTPS + CSRF en toda la app</p>
+      </div>
+    </div>
+
+    <p class="last-updated">Última actualización: {{ fecha_actual|default:"20 de Abril, 2026" }}</p>
+
+    <div class="info-banner banner-blue">
+      <div class="banner-icon">🤖</div>
+      <p>Esta política cumple con los <strong>requisitos de seguridad de datos de Google Play</strong> para aplicaciones de audiencia general (+13), incluyendo declaración de datos recopilados, propósito de uso, compartición con terceros y derechos del usuario.</p>
+    </div>
+
+    <p class="intro-text">En <strong>TuBarrio</strong>, respetamos tu privacidad y estamos comprometidos a proteger tus datos personales. Esta política explica cómo recopilamos, usamos y protegemos tu información al usar nuestra app y sitio web, de conformidad con la <strong>Ley N° 19.628</strong> sobre Protección de la Vida Privada (Chile) y las <strong>Políticas de Google Play</strong>. Esta aplicación está dirigida a una <strong>audiencia general mayor de 13 años</strong>.</p>
+
+    <!-- TABLA SEGURIDAD DE DATOS -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num star">★</div>
+        <div>
+          <h2>Resumen de Seguridad de Datos</h2>
+          <span class="section-tag">Requerido por Google Play</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <p class="plain-text" style="margin-bottom:1rem;">Esta tabla resume cómo TuBarrio maneja cada tipo de dato, tal como se declara en la sección "Seguridad de los datos" de Google Play Store.</p>
+        <div class="safety-table-wrap">
+          <div class="safety-table-header">
+            <span>Tipo de dato</span><span>¿Se recopila?</span><span>¿Se comparte?</span><span>Propósito</span>
+          </div>
+          <div class="safety-row">
+            <div class="safety-cell"><strong>Ubicación aproximada</strong>Ciudad o comuna</div>
+            <div class="safety-cell"><span class="tag tag-yes">Sí</span></div>
+            <div class="safety-cell"><span class="tag tag-no">No</span></div>
+            <div class="safety-cell">Mostrar negocios cercanos en el mapa</div>
+          </div>
+          <div class="safety-row">
+            <div class="safety-cell"><strong>Ubicación exacta (GPS)</strong>Latitud/longitud en tiempo real</div>
+            <div class="safety-cell"><span class="tag tag-opt">Opcional</span></div>
+            <div class="safety-cell"><span class="tag tag-no">No</span></div>
+            <div class="safety-cell">Centrar mapa y calcular distancias. No se almacena.</div>
+          </div>
+          <div class="safety-row">
+            <div class="safety-cell"><strong>Fotos</strong>Imágenes del negocio</div>
+            <div class="safety-cell"><span class="tag tag-yes">Obligatoria</span></div>
+            <div class="safety-cell"><span class="tag tag-yes">Pública</span></div>
+            <div class="safety-cell">Verificar que el negocio es real y mostrar su fachada/productos.</div>
+          </div>
+          <div class="safety-row">
+            <div class="safety-cell"><strong>Email</strong>Formulario de contacto</div>
+            <div class="safety-cell"><span class="tag tag-opt">Opcional</span></div>
+            <div class="safety-cell"><span class="tag tag-no">No</span></div>
+            <div class="safety-cell">Responder consultas. Se elimina a los 90 días.</div>
+          </div>
+          <div class="safety-row">
+            <div class="safety-cell"><strong>Contacto del negocio</strong>WhatsApp, Instagram, FB</div>
+            <div class="safety-cell"><span class="tag tag-opt">Opcional</span></div>
+            <div class="safety-cell"><span class="tag tag-yes">Pública</span></div>
+            <div class="safety-cell">Visible en ficha pública del negocio</div>
+          </div>
+          <div class="safety-row">
+            <div class="safety-cell"><strong>Datos de uso anónimos</strong>Clics, búsquedas</div>
+            <div class="safety-cell"><span class="tag tag-yes">Sí</span></div>
+            <div class="safety-cell"><span class="tag tag-no">No</span></div>
+            <div class="safety-cell">Mejorar la app. Sin identificación individual.</div>
+          </div>
+        </div>
+        <div class="alert alert-green" style="margin-top:.75rem;">
+          <strong>Cifrado:</strong> Todos los datos se transmiten mediante HTTPS. Los datos en reposo se almacenan con acceso restringido.
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 1 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <h2>Datos que Recopilamos</h2>
+      </div>
+      <div class="section-body">
+        <div class="subsection">
+          <h3>Ubicación Geográfica (GPS)</h3>
+          <p>Cuando usas la función "Mi ubicación", solicitamos acceso a tu GPS <strong>exclusivamente</strong> para mostrar negocios cercanos (radio 5 km), ordenar por distancia y mejorar la precisión del mapa.</p>
+          <div class="alert alert-terra"><strong>Importante:</strong> Tu ubicación exacta no se almacena ni se comparte. Se usa solo en tiempo real en tu dispositivo.</div>
+        </div>
+        <div class="subsection">
+          <h3>Fotos de Negocios (Obligatoria)</h3>
+          <p>Para garantizar la autenticidad del directorio y evitar perfiles falsos o spam, <strong>es obligatorio subir al menos una (1) foto real del negocio</strong> (fachada, local, o productos).</p>
+          <p>Las fotos se almacenan en nuestros servidores y son visibles públicamente en tu ficha. Al subirlas, confirmas tener los derechos correspondientes.</p>
+        </div>
+        <div class="subsection">
+          <h3>Datos de Contacto</h3>
+          <p>Recopilamos el WhatsApp, Instagram o Facebook que <strong>tú decides voluntariamente publicar</strong> en tu perfil de negocio. Serán visibles para todos los usuarios de TuBarrio.</p>
+          <p>El email del formulario de contacto se usa exclusivamente para responder tu consulta, sin fines de marketing sin tu consentimiento explícito.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 2 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <div>
+          <h2>Permisos de la Aplicación</h2>
+          <span class="section-tag">Requerido por Google Play</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <p class="plain-text" style="margin-bottom:.85rem;">TuBarrio solicita los siguientes permisos en tu dispositivo Android:</p>
+        <div class="perms-grid">
+          <div class="perm-card">
+            <div class="perm-icon">📍</div>
+            <div>
+              <div class="perm-name">ACCESS_FINE_LOCATION</div>
+              <div class="perm-why">Posición exacta en el mapa y distancias a negocios. Solo cuando lo autorizas.</div>
+            </div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-icon">🗺️</div>
+            <div>
+              <div class="perm-name">ACCESS_COARSE_LOCATION</div>
+              <div class="perm-why">Ubicación aproximada por red celular o Wi-Fi como alternativa al GPS.</div>
+            </div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-icon">📷</div>
+            <div>
+              <div class="perm-name">CAMERA / READ_MEDIA_IMAGES</div>
+              <div class="perm-why">Requerido para tomar o seleccionar la <strong>foto obligatoria</strong> que acredita la existencia física de tu negocio.</div>
+            </div>
+          </div>
+          <div class="perm-card">
+            <div class="perm-icon">🌐</div>
+            <div>
+              <div class="perm-name">INTERNET</div>
+              <div class="perm-why">Para cargar el mapa, mostrar negocios y enviar formularios. Necesario para el funcionamiento.</div>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-green" style="margin-top:.85rem;"><strong>Sin permisos en segundo plano:</strong> TuBarrio no accede a tu ubicación, cámara ni archivos cuando la app está cerrada.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 3 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <h2>Cómo Usamos tu Información</h2>
+      </div>
+      <div class="section-body">
+        <ul class="clean-list">
+          <li><strong>Mostrar el mapa:</strong> Usamos tu ubicación para centrar el mapa y listar negocios cercanos.</li>
+          <li><strong>Publicar tu negocio:</strong> La información de "Registrar mi negocio" será visible públicamente en el mapa.</li>
+          <li><strong>Responder consultas:</strong> Tu email se usa exclusivamente para responder reportes o mensajes del formulario de contacto.</li>
+          <li><strong>Mejorar la app:</strong> Datos anónimos de uso (clics por categoría) para mejorar la experiencia, sin identificar usuarios individuales.</li>
+          <li><strong>Cumplimiento legal:</strong> Podemos conservar datos si la ley chilena o una orden judicial lo requiere.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 3.5 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num" style="font-size:.75rem;">3.5</div>
+        <h2>Contenido Público e Información de Negocios</h2>
+      </div>
+      <div class="section-body">
+        <p class="plain-text"><strong>Fuentes de Información:</strong> Para ofrecer el directorio de barrio más completo posible, TuBarrio puede complementar la información de los negocios con datos disponibles <strong>públicamente en perfiles de redes sociales (Facebook, Instagram) o sitios web del propio negocio</strong>.</p>
+        <div class="alert alert-green">
+          <strong>Política de Uso Justo (Fair Use):</strong> Solo utilizamos información que el negocio ha marcado explícitamente como <strong>"Pública"</strong> en sus respectivas redes sociales. Nunca accedemos a información privada o de "Solo amigos".
+        </div>
+        <p class="plain-text"><strong>Retiro de Información:</strong> Si eres dueño de un negocio y ves tu información en TuBarrio, tienes el control total para modificarla o eliminarla:</p>
+        <ul class="clean-list">
+          <li><strong>Solicita la gestión de la ficha:</strong> Usa el botón "Reclamar Negocio" dentro de la app.</li>
+          <li><strong>Solicita la eliminación total:</strong> Escríbenos a <a href="mailto:tubarriochile@gmail.com">tubarriochile@gmail.com</a> con el asunto "Retirar mi negocio de Tubarrio". Procesamos en máximo 72 horas hábiles.</li>
+        </ul>
+        <p class="plain-text">Esta política asegura el cumplimiento del <strong>Artículo 19 N°4 de la Constitución Chilena</strong>.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 4 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <h2>¿Compartimos tus Datos con Terceros?</h2>
+      </div>
+      <div class="section-body">
+        <p class="plain-text"><strong>No.</strong> No vendemos, alquilamos ni compartimos tu información personal con terceros para fines comerciales.</p>
+        <p class="plain-text">Usamos los siguientes servicios técnicos necesarios para el funcionamiento:</p>
+        <ul class="clean-list">
+          <li><strong>OpenStreetMap / Leaflet:</strong> Proveedor del mapa base. Solo recibe tiles de mapa, sin datos de usuario.</li>
+          <li><strong>Hosting de imágenes:</strong> Almacenamiento seguro de fotos de negocios subidas voluntariamente.</li>
+          <li><strong>Servidor web (Django/HTTPS):</strong> Infraestructura técnica bajo nuestro control directo.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 5 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <div>
+          <h2>Retención y Eliminación de Datos</h2>
+          <span class="section-tag">Requerido por Google Play</span>
+        </div>
+      </div>
+      <div class="section-body">
+        <p class="plain-text" style="margin-bottom:.85rem;">Conservamos los datos solo el tiempo necesario para cumplir el propósito declarado:</p>
+        <div class="subsection" style="padding:0; overflow:hidden;">
+          <table class="ret-table">
+            <thead><tr><th>Tipo de dato</th><th>Período de retención</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Ubicación GPS</strong></td><td>No se almacena. Solo en tiempo real.</td></tr>
+              <tr><td><strong>Fotos de negocios</strong></td><td>Hasta que el dueño solicite eliminar la ficha.</td></tr>
+              <tr><td><strong>Datos del negocio</strong></td><td>Hasta que el dueño solicite eliminar la ficha.</td></tr>
+              <tr><td><strong>Email (formulario/reportes)</strong></td><td>Máximo 90 días desde la resolución de la consulta.</td></tr>
+              <tr><td><strong>Datos de uso anónimos</strong></td><td>Sin límite definido (no son identificables).</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <p class="plain-text" style="margin-top:1rem;"><strong>Para eliminar tus datos</strong>, escríbenos a <a href="mailto:tubarriochile@gmail.com">tubarriochile@gmail.com</a> con el asunto <strong>"Solicitud de Eliminación de Datos - TuBarrio"</strong>. Procesamos tu solicitud en máximo 72 horas hábiles.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 6 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <h2>Seguridad</h2>
+      </div>
+      <div class="section-body">
+        <ul class="clean-list">
+          <li><strong>HTTPS:</strong> Toda comunicación entre tu dispositivo y nuestros servidores va cifrada con TLS.</li>
+          <li><strong>Tokens CSRF:</strong> Protección contra ataques de falsificación de solicitudes en formularios.</li>
+          <li><strong>Acceso restringido:</strong> Solo personal autorizado de TuBarrio accede a los datos almacenados.</li>
+        </ul>
+        <div class="alert alert-terra" style="margin-top:.75rem;">Ningún método de transmisión por Internet es 100% seguro. En caso de una brecha de seguridad que afecte tus datos, te notificaremos conforme a la legislación vigente.</div>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 7 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <h2>Tus Derechos</h2>
+      </div>
+      <div class="section-body">
+        <p class="plain-text">De acuerdo con la Ley N° 19.628 y las políticas de Google Play, tienes derecho a:</p>
+        <ul class="clean-list">
+          <li><strong>Acceder</strong> a los datos personales que tenemos sobre ti.</li>
+          <li><strong>Rectificar</strong> información incorrecta sobre tu negocio.</li>
+          <li><strong>Eliminar</strong> tus datos (ver sección 5 para el procedimiento).</li>
+          <li><strong>Oponerte</strong> al uso de tus datos para fines distintos a los declarados.</li>
+          <li><strong>Portabilidad:</strong> Solicitar una copia de tus datos en formato legible.</li>
+        </ul>
+        <p class="plain-text" style="margin-top:.75rem;">Para ejercer cualquiera de estos derechos, contáctanos en <a href="mailto:tubarriochile@gmail.com">tubarriochile@gmail.com</a>.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 8 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">8</div>
+        <h2>Cambios a esta Política</h2>
+      </div>
+      <div class="section-body">
+        <p class="plain-text">Podemos actualizar esta política ocasionalmente. Te notificaremos de cambios significativos a través de la aplicación o nuestro sitio web. El uso continuado de la app tras la notificación implica aceptación de los cambios.</p>
+      </div>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- SECCIÓN 9 -->
+    <div class="section">
+      <div class="section-header">
+        <div class="section-num">9</div>
+        <h2>Contacto</h2>
+      </div>
+      <div class="section-body">
+        <p class="plain-text" style="margin-bottom:1rem;">Si tienes preguntas, solicitudes de eliminación de datos o inquietudes sobre esta política:</p>
+        <div class="contact-block">
+          <a href="mailto:tubarriochile@gmail.com" class="contact-item">
+            <div class="contact-icon">✉️</div>
+            <div><span class="ci-label">Correo electrónico</span><strong>tubarriochile@gmail.com</strong></div>
+          </a>
+          <a href="/contacto/" class="contact-item">
+            <div class="contact-icon">💬</div>
+            <div><span class="ci-label">Formulario web</span><strong>Página de Contacto</strong></div>
+          </a>
+        </div>
+        <p class="plain-text" style="margin-top:1rem; font-size:.85rem;">Responsable del tratamiento de datos: <strong>TuBarrio Chile</strong> · Santiago, Chile</p>
+      </div>
+    </div>
+
+    <div class="footer-nav">
+      <a href="/" class="back-btn">← Volver al mapa</a>
+      <div class="footer-links-right">
+        <a href="/contacto/" class="footer-link">Contacto</a>
+        <span style="color:var(--warm-dark);">·</span>
+        <a href="/" class="footer-link">TuBarrio</a>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>

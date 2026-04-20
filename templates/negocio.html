@@ -207,10 +207,13 @@
 <body>
 <nav>
   <a class="logo" href="{% url 'index' %}">Tu<span>Barrio</span></a>
-  <a class="nav-back" href="{% url 'index' %}">
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
-    Volver al mapa
-  </a>
+  <div style="display: flex; align-items: center; gap: 1rem; margin-left: auto;">
+    <a href="{% url 'privacidad' %}" style="font-size: 0.75rem; color: var(--dust); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--terra)'" onmouseout="this.style.color='var(--dust)'">🔒 Privacidad</a>
+    <a class="nav-back" href="{% url 'index' %}">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Volver al mapa
+    </a>
+  </div>
 </nav>
 
 <div class="page-wrap">

@@ -796,6 +796,72 @@ function updatePreview() {
 }
 
 // ============================================================
+// NOTIFICACIONES PUSH LOCALES
+// ============================================================
+
+function solicitarPermisoNotificaciones() {
+  if (!('Notification' in window)) {
+    console.log('Este navegador no soporta notificaciones');
+    return;
+  }
+  
+  if (Notification.permission === 'granted') {
+    // Ya tiene permiso, guardar el negocio pendiente
+    programarNotificacionAprobacion();
+    mostrarToastNotificacion('🔔 ¡Te avisaremos cuando tu negocio sea aprobado!');
+  } else if (Notification.permission !== 'denied') {
+    // Pedir permiso
+    Notification.requestPermission().then(permission => {
+      if (permission === 'granted') {
+        programarNotificacionAprobacion();
+        mostrarToastNotificacion('🔔 ¡Te avisaremos cuando tu negocio sea aprobado!');
+      }
+    });
+  }
+}
+
+function programarNotificacionAprobacion() {
+  // Guardar en localStorage que el dueño quiere notificaciones
+  const negocioPendiente = {
+    nombre: state.nombre,
+    fecha: new Date().toISOString(),
+    notificaciones: true
+  };
+  localStorage.setItem('tubarrio_negocio_pendiente', JSON.stringify(negocioPendiente));
+}
+
+function mostrarToastNotificacion(mensaje) {
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #241A10;
+    color: #F6F1E9;
+    padding: 12px 20px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+    white-space: nowrap;
+  `;
+  toast.innerHTML = `<span>🔔</span> ${mensaje}`;
+  document.body.appendChild(toast);
+  
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(20px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
+// ============================================================
 // SUBMIT DEL FORMULARIO
 // ============================================================
 
@@ -886,6 +952,10 @@ async function submitForm() {
       if (successScreen) successScreen.classList.add('active');
       const rightPanel = document.querySelector('.right-panel');
       if (rightPanel) rightPanel.scrollTo({ top: 0, behavior: 'smooth' });
+      
+      // ⭐ NUEVO: Solicitar permiso para notificaciones
+      solicitarPermisoNotificaciones();
+      
     } else {
       const errorText = await res.text();
       console.error('Error del servidor:', errorText);

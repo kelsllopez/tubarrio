@@ -76,7 +76,7 @@ function getDomicilioIcono(domicilio) {
 }
 
 /* ════════════════════════════
-   VERIFICAR SI ESTÁ ABIERTO AHORA - VERSIÓN MEJORADA
+   VERIFICAR SI ESTÁ ABIERTO AHORA
 ════════════════════════════ */
 
 const DIAS_MAPA = {
@@ -103,7 +103,6 @@ function verificarAbiertoAhora(diasStr) {
     for (const franja of franjas) {
       let diasParte = null, horaInicio = null, horaFin = null;
 
-      // Formato nuevo: "días de HH:MM a HH:MM"
       let m = franja.match(/^(.+?)\s+de\s+(\d{1,2}):(\d{2})\s+a\s+(\d{1,2}):(\d{2})$/i);
       if (m) {
         diasParte  = m[1].trim();
@@ -111,7 +110,6 @@ function verificarAbiertoAhora(diasStr) {
         horaFin    = +m[4] * 60 + +m[5];
       }
 
-      // Formato antiguo: "días · HH:MM–HH:MM" (· o •, – o -)
       if (!m) {
         m = franja.match(/^(.+?)\s*[·•]\s*(\d{1,2}):(\d{2})\s*[–\-]\s*(\d{1,2}):(\d{2})$/);
         if (m) {
@@ -133,7 +131,6 @@ function verificarAbiertoAhora(diasStr) {
 
       abreHoy = true;
 
-      // Manejar cierre pasada medianoche (ej: 13:00–00:45)
       const cierraPasaMedianoche = horaFin < horaInicio;
       const estaAbierto = cierraPasaMedianoche
         ? (horaActual >= horaInicio || horaActual <= horaFin)
@@ -146,7 +143,6 @@ function verificarAbiertoAhora(diasStr) {
       }
     }
 
-    // Abre hoy pero más tarde
     if (abreHoy && horarioAperturaHoy !== null) {
       const falta = horarioAperturaHoy - horaActual;
       const horas = Math.floor(falta / 60), mins = falta % 60;
@@ -157,7 +153,6 @@ function verificarAbiertoAhora(diasStr) {
       };
     }
 
-    // Buscar próximo día
     for (let i = 1; i <= 7; i++) {
       const nextDay = (diaActual + i) % 7;
       if (todosLosDiasNumeros.has(nextDay)) {
@@ -183,6 +178,26 @@ function getEstadoAbiertoBadge(diasStr) {
     return `<span class="estado-badge cerrado">${estado.mensaje}</span>`;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   INTEGRACIÓN CON OFFLINE MANAGER
+═══════════════════════════════════════════════════════════ */
+
+window.addEventListener('tubarrio:online', () => {
+  console.log('🔄 Reconectado - Forzando actualización de negocios');
+  if (typeof pollNegocios === 'function') {
+    pollBackoffMs = 500;
+    pollNegocios();
+  }
+});
+
+window.addEventListener('tubarrio:offline', () => {
+  console.log('📡 Modo offline activado');
+});
+
+/* ════════════════════════════
+   CONFIGURACIÓN INICIAL
+════════════════════════════ */
 
 const TB_CONFIG = (window.TB_CONFIG && typeof window.TB_CONFIG === 'object') ? window.TB_CONFIG : {};
 const TB_STORAGE_KEY = 'tubarrio:v1';
@@ -280,6 +295,7 @@ function adjustFiltersTop(){
   const fl = document.getElementById('filtersBar');
   if(tb && fl) fl.style.top = tb.offsetHeight + 'px';
 }
+window.adjustFiltersTop = adjustFiltersTop;
 
 function checkEmpty(){
   const existing = document.querySelector('.empty-map');
@@ -320,7 +336,13 @@ function initMap(){
   } catch {}
 
   if(L.markerClusterGroup){
-    markersLayer = L.markerClusterGroup({showCoverageOnHover:false, spiderfyOnMaxZoom:true, chunkedLoading:true});
+    markersLayer = L.markerClusterGroup({
+      showCoverageOnHover: false,
+      spiderfyOnMaxZoom: true,
+      chunkedLoading: true,
+      maxClusterRadius: 50,
+      disableClusteringAtZoom: 16
+    });
     markersLayer.addTo(map);
   } else {
     markersLayer = L.layerGroup().addTo(map);
@@ -348,13 +370,25 @@ function initMap(){
   renderAll();
   updateBadge();
   checkEmpty();
+  
   if(NEGOCIOS.length > 0){
     const primero = NEGOCIOS.find(n => n.lat != null && n.lng != null);
     if(primero) map.setView([primero.lat, primero.lng], 14);
     setTimeout(() => togglePanel(true), 600);
   }
+  
   schedulePoll(800);
-  document.addEventListener('keydown', e => { if(e.key === 'Escape'){ closeDetail(); closeNearbyAlert(); } });
+  
+  // ⭐ Verificar si hay un negocio pendiente de aprobación
+  setTimeout(() => verificarNegocioPendiente(), 2000);
+  
+  document.addEventListener('keydown', e => { 
+    if(e.key === 'Escape'){ 
+      closeDetail(); 
+      closeNearbyAlert(); 
+      if(modalUbicacionAbierto) cerrarModalUbicacion(false);
+    } 
+  });
 }
 
 function schedulePoll(ms){
@@ -362,6 +396,11 @@ function schedulePoll(ms){
 }
 
 async function pollNegocios(){
+  if (!navigator.onLine) {
+    schedulePoll(30000);
+    return;
+  }
+  
   const badge = document.getElementById('liveBadge');
   if(badge) badge.classList.add('updating');
   try{
@@ -409,6 +448,11 @@ async function pollNegocios(){
     const serverIds = new Set(data.map(n => n.id));
     NEGOCIOS = NEGOCIOS.filter(n => serverIds.has(n.id));
     knownIds  = new Set(NEGOCIOS.map(n => n.id));
+    
+    if (NEGOCIOS.length > 0 && typeof window.cacheNegociosForOffline === 'function') {
+      window.cacheNegociosForOffline(NEGOCIOS);
+    }
+    
     if(newOnes.length > 0 || updatedIds.size > 0){
       renderAll(new Set([...newOnes.map(n => n.id), ...updatedIds]));
       updateBadge();
@@ -421,6 +465,10 @@ async function pollNegocios(){
       const first = newOnes.find(n => n.lat != null && n.lng != null);
       if(first) map.flyTo([first.lat, first.lng], 14, {duration: 1.5});
     }
+    
+    // ⭐ Verificar negocio pendiente después de actualizar datos
+    setTimeout(() => verificarNegocioPendiente(), 500);
+    
     pollBackoffMs = 30000;
     schedulePoll(pollBackoffMs);
   } catch(e){
@@ -733,11 +781,15 @@ function dist(lat1, lng1, lat2, lng2){
   return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
+/* ════════════════════════════
+   GEOLOCALIZACIÓN CON MODAL EDUCATIVO
+════════════════════════════ */
+
+let modalUbicacionAbierto = false;
+
 function useGPS(){
   const btn = document.getElementById('gpsBtn');
-  if(!navigator.geolocation){ setStatus('Tu navegador no soporta geolocalización.', 'err'); return; }
-  if(!btn) return;
-
+  
   if(btn.classList.contains('is-on') && userLat !== null){
     nearOnly = !nearOnly;
     if(nearOnly){
@@ -752,19 +804,58 @@ function useGPS(){
     return;
   }
 
+  abrirModalUbicacion();
+}
+
+function abrirModalUbicacion() {
+  const modal = document.getElementById('modalUbicacion');
+  if (!modal) return;
+  
+  modalUbicacionAbierto = true;
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function cerrarModalUbicacion(aceptar) {
+  const modal = document.getElementById('modalUbicacion');
+  if (!modal) return;
+  
+  modalUbicacionAbierto = false;
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+  
+  if (aceptar) {
+    solicitarGeolocalizacion();
+  } else {
+    showToast('📍 Puedes activar tu ubicación en cualquier momento desde el botón GPS', 4000);
+  }
+}
+
+function solicitarGeolocalizacion() {
+  const btn = document.getElementById('gpsBtn');
+  
+  if(!navigator.geolocation){ 
+    setStatus('Tu navegador no soporta geolocalización.', 'err'); 
+    return; 
+  }
+  if(!btn) return;
+
+  btn.classList.remove('is-on', 'is-err');
   btn.classList.add('loading');
-  btn.classList.remove('is-err');
   btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span>Buscando…</span>`;
 
   navigator.geolocation.getCurrentPosition(
     pos => {
-      userLat = pos.coords.latitude; userLng = pos.coords.longitude;
+      userLat = pos.coords.latitude; 
+      userLng = pos.coords.longitude;
       nearOnly = true;
 
       if(userMarker) map.removeLayer(userMarker);
       const icon = L.divIcon({
         html: `<div class="user-marker-wrap"><div class="user-marker-ring"></div><div class="user-marker-inner"></div></div>`,
-        className: '', iconSize: [20, 20], iconAnchor: [10, 10]
+        className: '', 
+        iconSize: [20, 20], 
+        iconAnchor: [10, 10]
       });
       userMarker = L.marker([userLat, userLng], {icon, zIndexOffset: 1000})
         .addTo(map)
@@ -811,21 +902,37 @@ function useGPS(){
       nearOnly = false;
 
       const isSecure = (location.protocol === 'https:' || location.hostname === 'localhost' || location.hostname === '127.0.0.1');
+      
+      let mensajeError = '';
       if(!isSecure){
-        setStatus('El GPS requiere HTTPS (o localhost).', 'err', 4500);
+        mensajeError = 'El GPS requiere HTTPS (o localhost).';
       } else if(err && err.code === 1){
-        setStatus('Permiso de GPS denegado.', 'err', 3500);
+        mensajeError = 'Permiso de ubicación denegado. Puedes activarlo desde la configuración de tu navegador.';
       } else if(err && err.code === 2){
-        setStatus('No se pudo obtener tu ubicación.', 'warn', 3500);
+        mensajeError = 'No se pudo obtener tu ubicación. Verifica tu conexión.';
       } else if(err && err.code === 3){
-        setStatus('GPS tardó demasiado. Intenta de nuevo.', 'warn', 3500);
+        mensajeError = 'GPS tardó demasiado. Intenta de nuevo.';
       } else {
-        setStatus('No se pudo acceder al GPS.', 'warn', 3500);
+        mensajeError = 'No se pudo acceder al GPS.';
+      }
+      
+      setStatus(mensajeError, 'err', 5000);
+      
+      if (err && err.code === 1) {
+        setTimeout(() => {
+          showToast('💡 Puedes activar la ubicación desde la configuración de tu navegador y volver a intentarlo', 6000);
+        }, 1000);
       }
     },
     {enableHighAccuracy: true, timeout: 10000, maximumAge: 60000}
   );
 }
+
+document.getElementById('modalUbicacion')?.addEventListener('click', e => {
+  if (e.target === e.currentTarget) {
+    cerrarModalUbicacion(false);
+  }
+});
 
 function showNearbyAlert(nearest, distKm, cat){
   closeNearbyAlert();
@@ -856,6 +963,173 @@ function goToNearest(id){
   focusNeg(id);
   setTimeout(() => openDetail(id), 1300);
 }
+
+/* ════════════════════════════
+   NOTIFICACIONES - VERIFICAR NEGOCIO PENDIENTE
+════════════════════════════ */
+
+function verificarNegocioPendiente() {
+  const pendiente = localStorage.getItem('tubarrio_negocio_pendiente');
+  if (!pendiente) {
+    console.log('📭 No hay negocio pendiente en localStorage');
+    return;
+  }
+  
+  try {
+    const data = JSON.parse(pendiente);
+    if (!data.notificaciones) return;
+    
+    console.log('🔍 Buscando negocio pendiente:', data.nombre);
+    
+    const normalizar = (str) => {
+      return (str || '').toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+    };
+    
+    const nombrePendienteNormalizado = normalizar(data.nombre);
+    
+    const negocioAprobado = NEGOCIOS.find(n => {
+      const nombreNegocioNormalizado = normalizar(n.nombre);
+      
+      const nombreSimilar = nombreNegocioNormalizado.includes(nombrePendienteNormalizado) ||
+                           nombrePendienteNormalizado.includes(nombreNegocioNormalizado);
+      
+      const fechaRegistro = new Date(data.fecha);
+      const ahora = new Date();
+      const esReciente = (ahora - fechaRegistro) < (7 * 24 * 60 * 60 * 1000);
+      
+      return nombreSimilar && esReciente;
+    });
+    
+    if (negocioAprobado) {
+      console.log('✅ Negocio encontrado:', negocioAprobado.nombre);
+      mostrarNotificacionAprobacion(negocioAprobado);
+      localStorage.removeItem('tubarrio_negocio_pendiente');
+    } else {
+      console.log('❌ No se encontró el negocio aún. Negocios disponibles:', NEGOCIOS.map(n => n.nombre));
+    }
+  } catch (e) {
+    console.error('Error verificando negocio pendiente:', e);
+  }
+}
+
+function mostrarNotificacionAprobacion(negocio) {
+  if (Notification.permission === 'granted') {
+    new Notification('🎉 ¡Tu negocio fue aprobado!', {
+      body: `${negocio.nombre} ya aparece en TuBarrio. ¡Miles de personas pueden encontrarte!`,
+      icon: '/static/icons/icon-192.png',
+      badge: '/static/icons/icon-192.png',
+      tag: 'negocio-aprobado',
+      requireInteraction: true,
+      vibrate: [200, 100, 200]
+    });
+  }
+  
+  mostrarModalAprobacion(negocio);
+}
+
+function mostrarModalAprobacion(negocio) {
+  // Eliminar cualquier modal existente primero
+  document.querySelectorAll('[data-modal="aprobacion"]').forEach(el => {
+    el.remove();
+    document.body.style.overflow = '';
+  });
+  
+  const modal = document.createElement('div');
+  modal.setAttribute('data-modal', 'aprobacion');
+  modal.style.cssText = `
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(36, 26, 16, 0.7);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  `;
+  
+  const content = document.createElement('div');
+  content.style.cssText = `
+    background: #FDFAF4;
+    border-radius: 28px;
+    padding: 32px 24px;
+    max-width: 380px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  `;
+  
+  content.innerHTML = `
+    <div style="font-size: 64px; margin-bottom: 16px;">🎉</div>
+    <h2 style="font-family: 'Fraunces', serif; font-size: 24px; margin-bottom: 8px; color: #241A10;">
+      ¡Felicitaciones!
+    </h2>
+    <p style="color: #8A7768; margin-bottom: 24px; line-height: 1.6;">
+      <strong style="color: #241A10;">${negocio.nombre}</strong> ya está publicado en TuBarrio.<br>
+      ¡Clientes de tu barrio pueden encontrarte!
+    </p>
+    <div style="display: flex; gap: 12px;">
+      <button class="modal-ver-negocio" style="
+        flex: 1;
+        padding: 14px;
+        background: #C2522A;
+        color: white;
+        border: none;
+        border-radius: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      ">
+        Ver mi negocio →
+      </button>
+      <button class="modal-cerrar" style="
+        flex: 1;
+        padding: 14px;
+        background: #EDE4D6;
+        color: #241A10;
+        border: none;
+        border-radius: 14px;
+        font-weight: 600;
+        cursor: pointer;
+      ">
+        Cerrar
+      </button>
+    </div>
+  `;
+  
+  modal.appendChild(content);
+  document.body.appendChild(modal);
+  document.body.style.overflow = 'hidden';
+  
+  const btnVer = content.querySelector('.modal-ver-negocio');
+  const btnCerrar = content.querySelector('.modal-cerrar');
+  
+  btnVer.addEventListener('click', () => {
+    modal.remove();
+    document.body.style.overflow = '';
+    if (typeof focusNeg === 'function') {
+      focusNeg(negocio.id);
+    }
+  });
+  
+  btnCerrar.addEventListener('click', () => {
+    modal.remove();
+    document.body.style.overflow = '';
+  });
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.remove();
+      document.body.style.overflow = '';
+    }
+  });
+}
+
+/* ════════════════════════════
+   MODAL DE DETALLE
+════════════════════════════ */
 
 let currentNegocioId = null;
 let currentNegocioData = null;
@@ -914,7 +1188,6 @@ function openDetail(id){
 
   const ubicacion = [n.dir, n.comuna, n.ciudad].filter(Boolean).join(', ');
   
-  // Obtener estado del negocio (abierto/cerrado)
   const estadoAbierto = verificarAbiertoAhora(n.dias);
   
   let htmlDetalles = '';
@@ -925,16 +1198,13 @@ function openDetail(id){
 
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg><span><strong>Dirección:</strong> ${ubicacion}</span></div>`;
   
-  // Mostrar el horario completo (el que viene en n.dias)
   const horarioMostrar = n.dias || 'Horario a confirmar';
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg><span><strong>Atención:</strong> ${horarioMostrar}</span></div>`;
 
-  // Mostrar estado (abierto/cerrado) con estilo destacado
   const estadoClase = estadoAbierto.abierto ? 'estado-abierto-badge' : 'estado-cerrado-badge';
   const estadoMensajeFinal = estadoAbierto.mensaje === 'Horario no disponible' ? '⚪ Sin horario' : estadoAbierto.mensaje;
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><span><strong>Estado:</strong> <span class="${estadoClase}" style="display:inline-block;padding:4px 12px;border-radius:20px;font-size:0.8rem;font-weight:600;margin-left:8px;">${estadoMensajeFinal}</span></span></div>`;
 
-  // Delivery
   htmlDetalles += `<div class="m-row"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 8h16v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8Z"/><path d="M4 8V6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2"/></svg><span><strong>Delivery:</strong> ${getDomicilioTexto(n.domicilio || 'no')}</span></div>`;
 
   if(n.instagram){
@@ -979,6 +1249,10 @@ function openDetail(id){
   }
 
   let actions = '';
+  
+  // Botón de compartir
+  actions += `<button class="ma ma-share" onclick="compartirNegocio(${n.id})">📤 Compartir</button>`;
+  
   if(n.whatsapp){ 
     const num = n.whatsapp.replace(/\D/g,''); 
     actions += `<a class="ma ma-wsp" href="https://wa.me/${num}" target="_blank" rel="noopener">💬 WhatsApp</a>`; 
@@ -999,6 +1273,45 @@ function openDetail(id){
 
   document.getElementById('detailModal')?.classList.add('open');
   document.body.style.overflow = 'hidden';
+}
+
+/* ════════════════════════════
+   COMPARTIR NEGOCIO
+════════════════════════════ */
+
+function compartirNegocio(id) {
+  const n = NEGOCIOS.find(x => x.id === id);
+  if (!n) return;
+  
+  const ubicacion = [n.dir, n.comuna, n.ciudad].filter(Boolean).join(', ');
+  const url = `${window.location.origin}/?negocio=${id}`;
+  
+  const shareData = {
+    title: `🏪 ${n.nombre} - TuBarrio`,
+    text: `${n.nombre} · ${catLabel(n.cat)} · ${ubicacion} · ${n.dias || 'Horario a confirmar'}`,
+    url: url
+  };
+  
+  if (navigator.share) {
+    navigator.share(shareData)
+      .then(() => showToast('✅ ¡Gracias por compartir!', 2000))
+      .catch((err) => {
+        if (err.name !== 'AbortError') {
+          fallbackShare(shareData);
+        }
+      });
+  } else {
+    fallbackShare(shareData);
+  }
+}
+
+function fallbackShare(shareData) {
+  const textToCopy = `${shareData.title}\n${shareData.text}\n${shareData.url}`;
+  navigator.clipboard?.writeText(textToCopy).then(() => {
+    showToast('📋 ¡Enlace copiado! Compártelo donde quieras', 2500);
+  }).catch(() => {
+    prompt('📤 Copia este enlace para compartir:', shareData.url);
+  });
 }
 
 function closeDetail(){
@@ -1125,6 +1438,10 @@ function openImageViewer(startIndex, imagenesString) {
 document.getElementById('detailModal')?.addEventListener('click', e => {
   if(e.target === e.currentTarget) closeDetail();
 });
+
+/* ════════════════════════════
+   TOAST
+════════════════════════════ */
 
 let toastTimer;
 function showToast(msg, duration = 3500){
@@ -1269,5 +1586,30 @@ function getCookie(name) {
 document.getElementById('modalReporte')?.addEventListener('click', e => {
   if (e.target === e.currentTarget) cerrarModalReporte();
 });
+
+/* ════════════════════════════
+   EXPORTS GLOBALES
+════════════════════════════ */
+
+window.switchTab = switchTab;
+window.openDetail = openDetail;
+window.closeDetail = closeDetail;
+window.openImageViewer = openImageViewer;
+window.filterBy = filterBy;
+window.onSearch = onSearch;
+window.clearSearch = clearSearch;
+window.setSort = setSort;
+window.togglePanel = togglePanel;
+window.useGPS = useGPS;
+window.cerrarModalUbicacion = cerrarModalUbicacion;
+window.goToNearest = goToNearest;
+window.closeNearbyAlert = closeNearbyAlert;
+window.focusNeg = focusNeg;
+window.abrirReporte = abrirReporte;
+window.abrirReporteGeneral = abrirReporteGeneral;
+window.cerrarModalReporte = cerrarModalReporte;
+window.compartirNegocio = compartirNegocio;
+window.verificarNegocioPendiente = verificarNegocioPendiente;
+window.mostrarModalAprobacion = mostrarModalAprobacion;
 
 window.addEventListener('load', initMap);

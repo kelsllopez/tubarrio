@@ -551,3 +551,15 @@ class NegocioViewSet(viewsets.ModelViewSet):
                     dt = timezone.make_aware(dt, timezone.get_current_timezone())
                 qs = qs.filter(fecha_modificacion__gt=dt)
         return qs
+    
+
+def privacidad(request):
+    """Vista para la política de privacidad requerida por Google Play Store"""
+    from datetime import date
+    meses_es = {
+        1: 'Enero', 2: 'Febrero', 3: 'Marzo', 4: 'Abril', 5: 'Mayo', 6: 'Junio',
+        7: 'Julio', 8: 'Agosto', 9: 'Septiembre', 10: 'Octubre', 11: 'Noviembre', 12: 'Diciembre'
+    }
+    hoy = date.today()
+    fecha_formateada = f"{hoy.day} de {meses_es[hoy.month]}, {hoy.year}"
+    return render(request, 'privacidad.html', {'fecha_actual': fecha_formateada})    

@@ -41,7 +41,10 @@
 
   <nav>
     <a href="/" class="logo">Tu<span>Barrio</span></a>
-    <a href="/" class="nav-back">← Volver al mapa</a>
+    <div style="display: flex; align-items: center; gap: 1.2rem; margin-left: auto;">
+      <a href="{% url 'privacidad' %}" style="font-size: 0.8rem; color: var(--dust); text-decoration: none; font-weight: 500; transition: color 0.2s;" onmouseover="this.style.color='var(--terra)'" onmouseout="this.style.color='var(--dust)'">🔒 Privacidad</a>
+      <a href="/" class="nav-back">← Volver al mapa</a>
+    </div>
   </nav>
 
   <!-- HERO -->
